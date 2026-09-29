@@ -22,7 +22,11 @@ struct StartListView: View {
     // 글자 크기 설정(Dynamic Type)을 따라 함께 커진다.
     @ScaledMetric(relativeTo: .body) private var numberWidth: CGFloat = 34
     @ScaledMetric(relativeTo: .body) private var iconWidth: CGFloat = 26
-    private let columnSpacing: CGFloat = 8
+    // iPad처럼 넓은 화면(regular)에서는 행 위아래와 열 사이를 넓혀 여유 있게 보이게 한다.
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    private var isRegularWidth: Bool { horizontalSizeClass == .regular }
+    private var columnSpacing: CGFloat { isRegularWidth ? 14 : 8 }
+    private var rowVerticalPadding: CGFloat { isRegularWidth ? 16 : 4 }
 
     var body: some View {
         HStack(alignment: .center, spacing: columnSpacing) {
@@ -73,7 +77,7 @@ struct StartListView: View {
                 MemoView(question: $question)
             }
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, rowVerticalPadding)
         // 구분선은 기본으로 행의 첫 글자에서 시작해 번호 자릿수마다 위치가 달라진다.
         // 모든 행에서 같은 곳(행의 앞 끝)에서 시작하게 고정한다.
         .alignmentGuide(.listRowSeparatorLeading) { _ in 0 }
