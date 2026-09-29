@@ -7,22 +7,10 @@
 import SwiftUI
 import SwiftData
 
+/// 실행 화면(LaunchScreen) 다음에 시작 화면 없이 바로 문항 목록으로 들어간다.
 struct ContentView: View {
-    @AppStorage("welcomeShownForRelease") private var welcomeShownForRelease = ""
-
-    /// 버전뿐 아니라 빌드가 바뀌어도 시작화면을 한 번 다시 보여준다.
-    private var shouldShowWelcome: Bool {
-        welcomeShownForRelease != AppInfo.releaseKey
-    }
-
     var body: some View {
-        Group {
-            if shouldShowWelcome {
-                WelcomeView()
-            } else {
-                MainAppView()
-            }
-        }
+        MainAppView()
     }
 }
 
@@ -48,5 +36,5 @@ func endDateReturn(year: Int, month: Int, day: Int) -> Date {
 }
 
 #Preview {
-    WelcomeView()
+    ContentView()
 }

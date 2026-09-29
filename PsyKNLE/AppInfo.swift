@@ -12,11 +12,6 @@ enum AppInfo {
         Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? ""
     }
 
-    /// 시작화면을 다시 보여줄지 판단하는 기준. 빌드만 올려도 값이 바뀐다.
-    static var releaseKey: String {
-        "\(version)(\(build))"
-    }
-
     /// "Ver 3.0  Build 9" 형태. 화면 상단 제목 아래처럼 좁은 자리에 쓴다.
     static var shortVersionLabel: String {
         guard !version.isEmpty else { return "" }
