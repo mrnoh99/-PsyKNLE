@@ -1,0 +1,15 @@
+# Personal data — keep locally only
+4학년명단.csv
+KNLE 정신간호 문제풀이 앱 Testflight 수신 희망자.xlsx
+tester_import.csv
+tester_import.numbers
+
+# macOS / Xcode user-specific
+.DS_Store
+*.xcuserstate
+**/xcuserdata/
+
+# 빌드 산출물
+.build/
+build/
+DerivedData/

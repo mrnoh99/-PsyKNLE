@@ -1,0 +1,57 @@
+name: CI
+
+# 이 저장소는 작업 브랜치를 main으로 직접 머지하는 방식이라
+# 모든 브랜치의 push에서 돌린다. PR을 쓰기 시작하면 pull_request 트리거를
+# 추가하되, 같은 커밋이 두 번 돌지 않도록 push는 main으로 좁히는 편이 낫다.
+on:
+  push:
+    branches: ['**']
+    paths-ignore: ['docs/**', '**/*.md']
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  data:
+    name: 문제 데이터 검증
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      # id 중복, 없는 보기를 가리키는 answer, 필터에 없는 분류·연도 등은
+      # 컴파일은 통과하지만 앱에서 문항이 사라지는 오류라 따로 검사한다.
+      - name: 시드 데이터 검사
+        run: python3 Scripts/validate_questions.py
+
+  build:
+    name: iOS 시뮬레이터 빌드
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Xcode 버전 확인
+        run: |
+          ls -d /Applications/Xcode*.app
+          xcodebuild -version
+          xcodebuild -showsdks | grep -i ios || true
+
+      - name: 빌드
+        run: |
+          xcodebuild build \
+            -project PsyKNLE.xcodeproj \
+            -scheme PsyKNLE \
+            -configuration Debug \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath .build \
+            -quiet \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGN_ENTITLEMENTS="" \
+            DEVELOPMENT_TEAM=""
