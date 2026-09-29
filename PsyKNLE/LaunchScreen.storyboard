@@ -15,40 +15,39 @@
                         <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
+                            <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="LaunchLamp" translatesAutoresizingMaskIntoConstraints="NO" id="lamp-image">
+                                <rect key="frame" x="116.66666666666669" y="283" width="160" height="99"/>
+                                <constraints>
+                                    <constraint firstAttribute="width" constant="160" id="lamp-width"/>
+                                    <constraint firstAttribute="height" constant="99" id="lamp-height"/>
+                                </constraints>
+                            </imageView>
                             <label opaque="NO" clipsSubviews="YES" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="PsyKNLE" textAlignment="center" lineBreakMode="middleTruncation" baselineAdjustment="alignBaselines" minimumFontSize="18" translatesAutoresizingMaskIntoConstraints="NO" id="GJd-Yh-RWb">
-                                <rect key="frame" x="20" y="360" width="353" height="41"/>
+                                <rect key="frame" x="20" y="410" width="353" height="41"/>
                                 <fontDescription key="fontDescription" type="boldSystem" pointSize="34"/>
                                 <color key="textColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                 <nil key="highlightedColor"/>
                             </label>
-                            <label opaque="NO" clipsSubviews="YES" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="의사국가고시 정신의학 대비" textAlignment="center" lineBreakMode="wordWrap" numberOfLines="0" baselineAdjustment="alignBaselines" minimumFontSize="14" translatesAutoresizingMaskIntoConstraints="NO" id="sub-title-label">
-                                <rect key="frame" x="20" y="425" width="353" height="53"/>
+                            <label opaque="NO" clipsSubviews="YES" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="간호사 국가시험 정신간호학 대비" textAlignment="center" lineBreakMode="wordWrap" numberOfLines="0" baselineAdjustment="alignBaselines" minimumFontSize="14" translatesAutoresizingMaskIntoConstraints="NO" id="sub-title-label">
+                                <rect key="frame" x="20" y="467" width="353" height="27"/>
                                 <fontDescription key="fontDescription" type="system" pointSize="22"/>
-                                <color key="textColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
-                                <nil key="highlightedColor"/>
-                            </label>
-                            <label opaque="NO" clipsSubviews="YES" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Version 3.0 (Build 8)" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" minimumFontSize="12" translatesAutoresizingMaskIntoConstraints="NO" id="version-label">
-                                <rect key="frame" x="20" y="502" width="353" height="20"/>
-                                <fontDescription key="fontDescription" type="system" pointSize="15"/>
-                                <color key="textColor" white="1" alpha="0.69999999999999996" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                <color key="textColor" white="1" alpha="0.90000000000000002" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                 <nil key="highlightedColor"/>
                             </label>
                         </subviews>
                         <viewLayoutGuide key="safeArea" id="Bcu-3y-fUS"/>
-                        <color key="backgroundColor" white="0.33333333329999998" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                        <color key="backgroundColor" red="0.0" green="0.40784313725490196" blue="0.71764705882352942" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                         <constraints>
-                            <constraint firstItem="sub-title-label" firstAttribute="centerY" secondItem="Ze5-6b-2t3" secondAttribute="centerY" id="group-centerY"/>
-                            <constraint firstItem="Bcu-3y-fUS" firstAttribute="centerX" secondItem="sub-title-label" secondAttribute="centerX" id="subtitle-centerX"/>
-                            <constraint firstItem="sub-title-label" firstAttribute="leading" secondItem="Bcu-3y-fUS" secondAttribute="leading" constant="20" id="subtitle-leading"/>
-                            <constraint firstItem="Bcu-3y-fUS" firstAttribute="trailing" secondItem="sub-title-label" secondAttribute="trailing" constant="20" id="subtitle-trailing"/>
+                            <constraint firstItem="GJd-Yh-RWb" firstAttribute="centerY" secondItem="Ze5-6b-2t3" secondAttribute="centerY" constant="4" id="group-centerY"/>
+                            <constraint firstItem="Bcu-3y-fUS" firstAttribute="centerX" secondItem="lamp-image" secondAttribute="centerX" id="lamp-centerX"/>
+                            <constraint firstItem="lamp-image" firstAttribute="bottom" secondItem="GJd-Yh-RWb" secondAttribute="top" constant="-28" id="lamp-spacing"/>
                             <constraint firstItem="Bcu-3y-fUS" firstAttribute="centerX" secondItem="GJd-Yh-RWb" secondAttribute="centerX" id="title-centerX"/>
                             <constraint firstItem="GJd-Yh-RWb" firstAttribute="leading" secondItem="Bcu-3y-fUS" secondAttribute="leading" constant="20" id="title-leading"/>
                             <constraint firstItem="Bcu-3y-fUS" firstAttribute="trailing" secondItem="GJd-Yh-RWb" secondAttribute="trailing" constant="20" id="title-trailing"/>
-                            <constraint firstItem="GJd-Yh-RWb" firstAttribute="bottom" secondItem="sub-title-label" secondAttribute="top" constant="-24" id="title-spacing"/>
-                            <constraint firstItem="Bcu-3y-fUS" firstAttribute="centerX" secondItem="version-label" secondAttribute="centerX" id="version-centerX"/>
-                            <constraint firstItem="version-label" firstAttribute="leading" secondItem="Bcu-3y-fUS" secondAttribute="leading" constant="20" id="version-leading"/>
-                            <constraint firstItem="Bcu-3y-fUS" firstAttribute="trailing" secondItem="version-label" secondAttribute="trailing" constant="20" id="version-trailing"/>
-                            <constraint firstItem="version-label" firstAttribute="top" secondItem="sub-title-label" secondAttribute="bottom" constant="24" id="version-spacing"/>
+                            <constraint firstItem="Bcu-3y-fUS" firstAttribute="centerX" secondItem="sub-title-label" secondAttribute="centerX" id="subtitle-centerX"/>
+                            <constraint firstItem="sub-title-label" firstAttribute="leading" secondItem="Bcu-3y-fUS" secondAttribute="leading" constant="20" id="subtitle-leading"/>
+                            <constraint firstItem="Bcu-3y-fUS" firstAttribute="trailing" secondItem="sub-title-label" secondAttribute="trailing" constant="20" id="subtitle-trailing"/>
+                            <constraint firstItem="sub-title-label" firstAttribute="top" secondItem="GJd-Yh-RWb" secondAttribute="bottom" constant="16" id="title-spacing"/>
                         </constraints>
                     </view>
                 </viewController>
@@ -57,4 +56,7 @@
             <point key="canvasLocation" x="52.671755725190835" y="374.64788732394368"/>
         </scene>
     </scenes>
+    <resources>
+        <image name="LaunchLamp" width="160" height="99"/>
+    </resources>
 </document>

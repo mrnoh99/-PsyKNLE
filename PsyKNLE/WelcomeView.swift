@@ -6,11 +6,18 @@ struct WelcomeView: View {
 
     var body: some View {
         ZStack {
-            Color(white: 0.333)
+            // LaunchScreen.storyboard와 같은 파란색(#0068B7)이라 실행 화면에서 자연스럽게 이어진다.
+            Color(red: 0, green: 104 / 255, blue: 183 / 255)
                 .ignoresSafeArea()
 
             VStack(spacing: 24) {
                 Spacer()
+
+                Image("LaunchLamp")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 160)
+                    .accessibilityHidden(true)
 
                 Text("PsyKNLE")
                     .font(.largeTitle)
@@ -37,8 +44,8 @@ struct WelcomeView: View {
             .font(.headline)
             .frame(maxWidth: .infinity)
             .padding(.vertical, 14)
-            .background(Color.accentColor)
-            .foregroundStyle(.white)
+            .background(.white)
+            .foregroundStyle(Color(red: 0, green: 104 / 255, blue: 183 / 255))
             .clipShape(RoundedRectangle(cornerRadius: 12))
             .padding(.horizontal, 24)
             .padding(.bottom, 24)
