@@ -34,7 +34,7 @@ struct QuestionView: View {
     @State private var inspectorSheetDetent: PresentationDetent = {
         UIDevice.current.userInterfaceIdiom == .pad ? .fraction(0.9) : .large
     }()
-    let listYears: [String] = ["전체", "2026", "2025"]
+    let listYears: [String] = ["전체", "2026", "2025", "2024", "2023", "2022", "2021", "2020"]
     let listStates: [String] = ["전체", "정답", "오답", "풀지않음" ]
     let listDxOrTx: [String] = ["전체", "사정", "진단", "계획", "중재", "평가"]
     
@@ -439,14 +439,14 @@ struct QuestionView: View {
         .animation(.default, value:allQuestions )
         .scrollIndicators(.hidden)
         //       .disabled(questionsDisabled)
-        .navigationTitle("간호사 국시 대비 정신간호학 풀이집(25-26)")
+        .navigationTitle("간호사 국시 대비 정신간호학 풀이집(20-26)")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             // 제목과 버전·빌드를 두 줄로 보여준다. 한 줄에 모두 넣으면
             // iPhone의 좁은 제목 영역에서 잘린다.
             ToolbarItem(placement: .principal) {
                 VStack(spacing: 1) {
-                    Text("간호사 국시 대비 정신간호학 풀이집(25-26)")
+                    Text("간호사 국시 대비 정신간호학 풀이집(20-26)")
                         .font(.headline)
                     Text(AppInfo.shortVersionLabel)
                         .font(.caption2)
