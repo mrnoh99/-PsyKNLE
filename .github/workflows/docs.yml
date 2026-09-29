@@ -1,0 +1,27 @@
+name: Docs
+
+# 지원 웹페이지(docs/)는 앱 빌드와 무관해 ci.yml에서 제외되므로 따로 검사한다.
+# App Store Connect에 등록하는 고객지원·개인정보처리방침 페이지가 대상이다.
+on:
+  push:
+    branches: ['**']
+    paths: ['docs/**', 'Scripts/check_docs.py', '.github/workflows/docs.yml']
+  workflow_dispatch:
+
+concurrency:
+  group: docs-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  docs:
+    name: 지원 웹페이지 검사
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      - name: 페이지·링크 검사
+        run: python3 Scripts/check_docs.py

@@ -253,6 +253,13 @@ def parse_list_years(src: str) -> list[str]:
     return re.findall(r'"([^"]*)"', m.group(1))
 
 
+def parse_list_classifi(src: str) -> list[str]:
+    m = re.search(r"let\s+listDxOrTx\s*:\s*\[String\]\s*=\s*\[(.*?)\]", src, re.S)
+    if not m:
+        raise ParseError("QuestionView.swift에서 listDxOrTx를 찾지 못했다")
+    return re.findall(r'"([^"]*)"', m.group(1))
+
+
 def main() -> int:
     errors: list[str] = []
     src = APP_FILE.read_text(encoding="utf-8")
@@ -342,6 +349,14 @@ def main() -> int:
             errors.append(
                 f"{QUESTION_VIEW_FILE.relative_to(REPO_ROOT)}: listYears의 \"{year}\"에 해당하는 문항이 없다"
             )
+
+    # 분류 필터 목록과 이 스크립트의 허용 분류가 어긋나면 필터로 고를 수 없는 문항이 생긴다.
+    list_classifi = [c for c in parse_list_classifi(QUESTION_VIEW_FILE.read_text(encoding="utf-8")) if c != "전체"]
+    if set(list_classifi) != VALID_CLASSIFI:
+        errors.append(
+            f"{QUESTION_VIEW_FILE.relative_to(REPO_ROOT)}: listDxOrTx {list_classifi}가 "
+            f"허용 분류 {sorted(VALID_CLASSIFI)}와 다르다"
+        )
 
     print(f"문항 {len(questions)}개 검사")
     for year in sorted(years, reverse=True):

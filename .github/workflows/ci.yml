@@ -29,6 +29,23 @@ jobs:
       - name: 시드 데이터 검사
         run: python3 Scripts/validate_questions.py
 
+  assets:
+    name: 앱 아이콘·이미지 검사
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      # 아이콘 크기가 틀리거나 1024 아이콘에 투명 채널이 있어도 빌드는 통과하지만
+      # App Store Connect 업로드에서 거절된다. 실행 화면이 가리키는 이미지도 확인한다.
+      - name: 에셋 검사
+        run: |
+          pip install --quiet pillow
+          python3 Scripts/check_assets.py
+
   build:
     name: iOS 시뮬레이터 빌드
     runs-on: macos-latest
