@@ -18,13 +18,14 @@ struct StartListView: View {
      
     
     // 행마다 번호 자릿수(1~245)나 아이콘 모양이 달라도 열이 흔들리지 않도록 폭을 고정한다.
+    // 아이콘은 같은 정사각형 칸에 넣어 글자와 함께 세로 가운데(middle)에 맞춘다.
     // 글자 크기 설정(Dynamic Type)을 따라 함께 커진다.
     @ScaledMetric(relativeTo: .body) private var numberWidth: CGFloat = 34
     @ScaledMetric(relativeTo: .body) private var iconWidth: CGFloat = 26
     private let columnSpacing: CGFloat = 8
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .center, spacing: 4) {
             HStack(alignment: .center, spacing: columnSpacing) {
                 Text("\(sequenceOfProblem)")
                     .monospacedDigit()
@@ -34,7 +35,7 @@ struct StartListView: View {
                 Image(systemName: question.stared == true ? "star.fill" : "star")
                     .imageScale(.large)
                     .foregroundStyle(.yellow)
-                    .frame(width: iconWidth)
+                    .frame(width: iconWidth, height: iconWidth)
                     .contentShape(Rectangle())
                     .onTapGesture {
                         question.stared.toggle()
@@ -44,7 +45,7 @@ struct StartListView: View {
                     }
 
                 statusIcon
-                    .frame(width: iconWidth)
+                    .frame(width: iconWidth, height: iconWidth)
 
                 Text(question.year)
                     .monospacedDigit()
@@ -56,7 +57,7 @@ struct StartListView: View {
                     showPopoverMemo = true
                 }, label: {
                     Image(systemName: isMemoEmpty ? "note.text.badge.plus" : "checkmark")
-                        .frame(width: iconWidth)
+                        .frame(width: iconWidth, height: iconWidth)
                 })
                 .buttonStyle(.plain)
                 .springLoadingBehavior(.enabled)
@@ -68,11 +69,11 @@ struct StartListView: View {
                 }
             }
 
-            // 문제 문장은 가운데 정렬하지 않고 별표 열부터 시작해 행마다 같은 선에 맞춘다.
+            // 문제 문장은 행의 가운데에 맞춘다. 두 줄이 되어도 각 줄이 가운데 정렬된다.
             Text("\(question.intro)  (\(question.id))")
                 .textSelection(.disabled)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.leading, numberWidth + columnSpacing)
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: .infinity, alignment: .center)
         }
         .padding(.vertical, 2)
     }
