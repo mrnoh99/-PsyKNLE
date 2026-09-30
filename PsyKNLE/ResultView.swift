@@ -19,6 +19,7 @@ struct ResultView: View {
     @State private var showPopoverMemo: Bool = false
     @State private var showPopoverKeyWord: Bool = false
     @AppStorage("pendingTopicJump") private var pendingTopicJump: String = ""
+    @State private var shownGuide: TopicGuide?
     @Environment(\.dismiss) private var dismiss
     
     static    func checkStatusOfProblem(question: Question) -> String {
@@ -212,6 +213,19 @@ struct ResultView: View {
                 }
                 .buttonStyle(.bordered)
                 .padding(.vertical, 4)
+            }
+            if let guide = TopicGuides.guide(for: question.topic) {
+                Button {
+                    shownGuide = guide
+                } label: {
+                    Label("주제 설명 보기: \(guide.title)", systemImage: "book")
+                        .multilineTextAlignment(.leading)
+                }
+                .buttonStyle(.bordered)
+                .padding(.bottom, 4)
+                .sheet(item: $shownGuide) { guide in
+                    TopicGuideView(topic: question.topic, guide: guide)
+                }
             }
             if question.memo.trimmingCharacters(in: .whitespaces).isEmpty {
                 

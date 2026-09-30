@@ -18,6 +18,7 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 APP_FILE = REPO_ROOT / "PsyKNLE" / "PsyKNLEApp.swift"
 QUESTION_VIEW_FILE = REPO_ROOT / "PsyKNLE" / "QuestionView.swift"
 TOPICS_FILE = REPO_ROOT / "PsyKNLE" / "StudyTopics.swift"
+GUIDES_FILE = REPO_ROOT / "PsyKNLE" / "TopicGuides.swift"
 
 # 간호과정 단계. QuestionView.swift의 listDxOrTx와 같아야 한다.
 VALID_CLASSIFI = {"사정", "진단", "계획", "중재", "평가"}
@@ -379,7 +380,23 @@ def main() -> int:
         if topic not in used_topics:
             errors.append(f"{TOPICS_FILE.relative_to(REPO_ROOT)}: 주제 \"{topic}\"에 해당하는 문항이 없다")
 
-    print(f"문항 {len(questions)}개 검사, 주제 {len(used_topics)}/{len(study_topics)}개 사용")
+    # 주제별 설명은 주제 이름으로 찾는다. 이름이 틀리면 설명 버튼이 조용히 사라진다.
+    guide_src = GUIDES_FILE.read_text(encoding="utf-8")
+    guide_topics: list[str] = []
+    for m in re.finditer(r"topics: \[([^\]]*)\]", guide_src):
+        guide_topics += re.findall(r'"([^"]*)"', m.group(1))
+    for topic in guide_topics:
+        if topic not in study_topics:
+            errors.append(f'{GUIDES_FILE.relative_to(REPO_ROOT)}: 주제별 메뉴에 없는 주제 "{topic}"')
+    if len(guide_topics) != len(set(guide_topics)):
+        errors.append(f"{GUIDES_FILE.relative_to(REPO_ROOT)}: 한 주제에 설명이 둘 이상 연결돼 있다")
+    for m in re.finditer(r'#"""\n(.*?)\n\s*"""#', guide_src, re.S):
+        for n, line in enumerate(m.group(1).split("\n")):
+            if line.count("**") % 2:
+                errors.append(f"{GUIDES_FILE.relative_to(REPO_ROOT)}: 굵게 표시(**)가 닫히지 않은 줄: {line.strip()[:40]}")
+
+    print(f"문항 {len(questions)}개 검사, 주제 {len(used_topics)}/{len(study_topics)}개 사용, "
+          f"주제 설명 {len(set(guide_topics))}/{len(study_topics)}개")
     for year in sorted(years, reverse=True):
         print(f"  {year}: {years[year]}문항")
 

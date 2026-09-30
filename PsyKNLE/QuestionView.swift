@@ -25,6 +25,7 @@ struct QuestionView: View {
     @State private var selectedValueForState: Int = 0
     @State private  var  selectedDxOrTx: String = "전체"
     @State private var selectedTopic: String = StudyTopics.all
+    @State private var shownGuide: TopicGuide?
     /// 답안 화면의 [이 주제 모아 풀기]가 주제 이름을 넣으면 목록 화면이 받아 필터를 바꾼다.
     @AppStorage("pendingTopicJump") private var pendingTopicJump: String = ""
     @State private var isStaredOn: Bool = false
@@ -445,6 +446,19 @@ struct QuestionView: View {
                         }
                         .onChange(of: selectedTopic) {
                             QuestionView.prepareList(listProblems: listProblems, allQuestions: allQuestions)
+                        }
+                        // 고른 주제에 설명이 있으면 바로 열어 볼 수 있게 한다.
+                        if let guide = TopicGuides.guide(for: selectedTopic) {
+                            Button {
+                                shownGuide = guide
+                            } label: {
+                                Label("주제 설명", systemImage: "book")
+                                    .labelStyle(.iconOnly)
+                            }
+                            .accessibilityLabel("주제 설명 보기")
+                            .sheet(item: $shownGuide) { guide in
+                                TopicGuideView(topic: selectedTopic, guide: guide)
+                            }
                         }
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
