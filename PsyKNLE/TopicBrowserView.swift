@@ -1,0 +1,180 @@
+import SwiftUI
+
+/// 주제별 학습 화면. 9개 단원의 42개 주제를 한눈에 보여 주고,
+/// 주제마다 문항 수와 풀이 현황(정답·오답·풀지 않음)을 막대로 보여 준다.
+/// 주제를 누르면 그 주제로 문항 목록을 거르고, 책 버튼을 누르면 주제 설명을 연다.
+struct TopicBrowserView: View {
+    @Binding var selectedTopic: String
+    let questions: [Question]
+
+    @Environment(\.dismiss) private var dismiss
+    @State private var searchText = ""
+    @State private var shownGuide: TopicGuide?
+    @State private var guideTopic = ""
+
+    struct Stats {
+        var total = 0
+        var correct = 0
+        var wrong = 0
+        var unsolved: Int { total - correct - wrong }
+    }
+
+    private var statsByTopic: [String: Stats] {
+        var result: [String: Stats] = [:]
+        for question in questions {
+            var stats = result[question.topic, default: Stats()]
+            stats.total += 1
+            switch ResultView.messageCorrectOrNot(question: question) {
+            case "정답": stats.correct += 1
+            case "오답": stats.wrong += 1
+            default: break
+            }
+            result[question.topic] = stats
+        }
+        return result
+    }
+
+    /// 검색어가 단원 제목이나 주제 이름에 들어 있는 주제만 남긴다.
+    private var visibleChapters: [StudyTopics.Chapter] {
+        let term = searchText.trimmingCharacters(in: .whitespaces)
+        guard !term.isEmpty else { return StudyTopics.chapters }
+        return StudyTopics.chapters.compactMap { chapter in
+            if chapter.title.localizedStandardContains(term) { return chapter }
+            let topics = chapter.topics.filter { $0.localizedStandardContains(term) }
+            return topics.isEmpty ? nil : StudyTopics.Chapter(title: chapter.title, topics: topics)
+        }
+    }
+
+    var body: some View {
+        let stats = statsByTopic
+        NavigationStack {
+            List {
+                if searchText.isEmpty {
+                    Section {
+                        allTopicsRow
+                    } footer: {
+                        Text("주제를 누르면 그 주제의 문항만 목록에 남는다. 연도·문제·분류 필터와 함께 걸린다. 책 모양 버튼은 주제 설명이다.")
+                    }
+                }
+                ForEach(visibleChapters) { chapter in
+                    Section {
+                        ForEach(chapter.topics, id: \.self) { topic in
+                            topicRow(topic, stats: stats[topic] ?? Stats())
+                        }
+                    } header: {
+                        HStack {
+                            Text(chapter.title)
+                            Spacer()
+                            Text("\(TopicBrowserView.questionCount(of: chapter, in: stats))문항")
+                        }
+                    }
+                }
+            }
+            .searchable(text: $searchText, prompt: "주제 검색")
+            .navigationTitle("주제별 학습")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("닫기") { dismiss() }
+                }
+            }
+            .sheet(item: $shownGuide) { guide in
+                TopicGuideView(topic: guideTopic, guide: guide)
+            }
+        }
+        // 목록 화면의 필터 줄은 글씨를 줄여 두었다. 그 설정이 이 화면까지 내려오지 않게 한다.
+        .font(.body)
+        .presentationSizing(.page)
+    }
+
+    static func questionCount(of chapter: StudyTopics.Chapter, in stats: [String: Stats]) -> Int {
+        chapter.topics.reduce(0) { sum, topic in sum + (stats[topic]?.total ?? 0) }
+    }
+
+    private var allTopicsRow: some View {
+        Button {
+            select(StudyTopics.all)
+        } label: {
+            HStack {
+                Label("전체 주제", systemImage: "square.grid.2x2")
+                Spacer()
+                Text("\(questions.count)문항")
+                    .foregroundStyle(.secondary)
+                if selectedTopic == StudyTopics.all {
+                    Image(systemName: "checkmark")
+                        .foregroundStyle(.blue)
+                }
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func topicRow(_ topic: String, stats: Stats) -> some View {
+        let isSelected = topic == selectedTopic
+        return HStack(spacing: 12) {
+            Button {
+                select(topic)
+            } label: {
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack(spacing: 6) {
+                        Text(topic)
+                            .fontWeight(isSelected ? .semibold : .regular)
+                            .foregroundStyle(isSelected ? .blue : .primary)
+                        if isSelected {
+                            Image(systemName: "checkmark")
+                                .foregroundStyle(.blue)
+                        }
+                    }
+                    progressBar(stats)
+                    Text("\(stats.total)문항 · 정답 \(stats.correct) · 오답 \(stats.wrong) · 풀지 않음 \(stats.unsolved)")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityHint("이 주제의 문항만 보기")
+
+            if let guide = TopicGuides.guide(for: topic) {
+                Button {
+                    guideTopic = topic
+                    shownGuide = guide
+                } label: {
+                    Image(systemName: "book")
+                        .imageScale(.large)
+                }
+                .buttonStyle(.borderless)
+                .accessibilityLabel("\(topic) 설명 보기")
+            }
+        }
+        .padding(.vertical, 2)
+    }
+
+    /// 정답(초록)·오답(빨강)·풀지 않음(회색)의 비율 막대
+    private func progressBar(_ stats: Stats) -> some View {
+        GeometryReader { geometry in
+            let width = geometry.size.width
+            let total = CGFloat(max(stats.total, 1))
+            HStack(spacing: 0) {
+                Rectangle()
+                    .fill(.green)
+                    .frame(width: width * CGFloat(stats.correct) / total)
+                Rectangle()
+                    .fill(.red)
+                    .frame(width: width * CGFloat(stats.wrong) / total)
+                Rectangle()
+                    .fill(Color.secondary.opacity(0.2))
+            }
+        }
+        .frame(height: 6)
+        .clipShape(Capsule())
+        .accessibilityHidden(true)
+    }
+
+    private func select(_ topic: String) {
+        selectedTopic = topic
+        dismiss()
+    }
+}

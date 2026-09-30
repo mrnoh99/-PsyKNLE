@@ -25,7 +25,7 @@ struct QuestionView: View {
     @State private var selectedValueForState: Int = 0
     @State private  var  selectedDxOrTx: String = "전체"
     @State private var selectedTopic: String = StudyTopics.all
-    @State private var shownGuide: TopicGuide?
+    @State private var showTopicBrowser = false
     /// 답안 화면의 [이 주제 모아 풀기]가 주제 이름을 넣으면 목록 화면이 받아 필터를 바꾼다.
     @AppStorage("pendingTopicJump") private var pendingTopicJump: String = ""
     @State private var isStaredOn: Bool = false
@@ -91,16 +91,6 @@ struct QuestionView: View {
         return suggestionSet.sorted().filter { SubjectKeywordSearch.suggestionMatches(tag: $0, searchTerm: searchTerm) }
     }
     
-    @ViewBuilder
-    private func topicMenuLabel(_ topic: String, count: Int) -> some View {
-        let title = "\(topic) (\(count))"
-        if topic == selectedTopic {
-            Label(title, systemImage: "checkmark")
-        } else {
-            Text(title)
-        }
-    }
-
     /// 답안 화면에서 [이 주제 모아 풀기]를 누르면 그 주제만 남도록 다른 필터를 풀고 문제풀기 모드로 둔다.
     private func applyTopicJump() {
         let topic = pendingTopicJump
@@ -184,7 +174,6 @@ struct QuestionView: View {
         let allQuestions  = selectedQuestions
         let problemSet = listProblems.filter{ $0.isOnSet }
         let suggestions = QuestionView.makeSuggestionSet(listProblems: listProblems, searchTerm: searchTerm)
-        let topicCounts = Dictionary(grouping: listProblems, by: \.topic).mapValues(\.count)
         
         /*        Text("의사국시 대비 정신건강의학 풀이집")
          .multilineTextAlignment(.center)
@@ -403,55 +392,33 @@ struct QuestionView: View {
                             
                         }
 
-                        // 주제별: 42개 주제를 9개 단원 하위 메뉴로 나눈다. 다른 필터와 함께 걸린다.
+                        // 주제별: 다른 필터와 함께 걸린다.
                         VStack {
                             Text(" 주제별 ")
                                 .padding(3)
                                 .background(selectedTopic == StudyTopics.all ? .gray : .blue)
                                 .foregroundStyle(selectedTopic == StudyTopics.all ? .white : .yellow)
                                 .cornerRadius(3.0)
-                            Menu {
-                                // 고른 주제에 설명이 있으면 메뉴 맨 위에서 바로 열 수 있게 한다.
-                                if let guide = TopicGuides.guide(for: selectedTopic) {
-                                    Button {
-                                        shownGuide = guide
-                                    } label: {
-                                        Label("주제 설명 보기", systemImage: "book")
-                                    }
-                                    Divider()
-                                }
-                                Button {
-                                    selectedTopic = StudyTopics.all
-                                } label: {
-                                    topicMenuLabel(StudyTopics.all, count: listProblems.count)
-                                }
-                                ForEach(StudyTopics.chapters) { chapter in
-                                    Menu(chapter.title) {
-                                        ForEach(chapter.topics, id: \.self) { topic in
-                                            Button {
-                                                selectedTopic = topic
-                                            } label: {
-                                                topicMenuLabel(topic, count: topicCounts[topic] ?? 0)
-                                            }
-                                        }
-                                    }
-                                }
+                            // 주제별은 42개 주제를 단원별로 한눈에 보고 풀이 현황과 설명까지 보는 별도 화면에서 고른다.
+                            Button {
+                                showTopicBrowser = true
                             } label: {
-                                // 긴 주제 이름은 한 줄 안에서 줄여 보여 준다. 전체 이름은 메뉴에서 확인한다.
+                                // 긴 주제 이름은 한 줄 안에서 줄여 보여 준다.
                                 HStack(spacing: 2) {
                                     Text(selectedTopic)
                                         .lineLimit(1)
                                         .truncationMode(.tail)
-                                    Image(systemName: "chevron.up.chevron.down")
+                                    Image(systemName: "square.stack.3d.up")
                                         .imageScale(.small)
                                 }
                             }
                             .frame(maxWidth: 76)
+                            .accessibilityLabel("주제별 학습 열기, 현재 \(selectedTopic)")
                             .onChange(of: selectedTopic) {
                                 QuestionView.prepareList(listProblems: listProblems, allQuestions: allQuestions)
                             }
-                            .sheet(item: $shownGuide) { guide in
-                                TopicGuideView(topic: selectedTopic, guide: guide)
+                            .sheet(isPresented: $showTopicBrowser) {
+                                TopicBrowserView(selectedTopic: $selectedTopic, questions: listProblems)
                             }
                         }
                     }
