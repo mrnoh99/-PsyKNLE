@@ -6,7 +6,6 @@ struct DetailView: View {
     @State private var showQuestions: EditMode = .active
     @State var showDetails = false
     @State var selectedRows = Set<Q.ID>()
-    @State private var buttonDisabled = false
     @Binding var stared: Bool
     @Binding var presentInspector: Bool
 
@@ -45,7 +44,6 @@ struct DetailView: View {
         .onAppear {
             presentInspector = false
             stared = question.stared
-            buttonDisabled = question.solved != 0
             // 예전 버전에서 여러 개를 골라 둔 기록이 있어도 하나만 표시한다.
             if let first = question.choice.first {
                 selectedRows = [first]
@@ -58,18 +56,15 @@ struct DetailView: View {
                     showDetails = true
                     let selected = selectedRows.sorted()
                     question.choice = selected
-                    if selected.isEmpty {
-                        question.solved = 0
-                    } else {
-                        question.solved = selected == question.answer ? 1 : 2
-                        buttonDisabled = true
-                    }
+                    question.solved = selected == question.answer ? 1 : 2
                 }, label: {
                     Image(systemName: "mail").imageScale(.large)
-                    Text("제출")
+                    // 이미 푼 문항도 답을 바꿔 다시 제출하고 답안을 확인할 수 있다.
+                    Text(question.solved == 0 ? "제출" : "다시 제출")
                 })
                 .buttonStyle(.borderedProminent)
-                .disabled(buttonDisabled)
+                // 보기를 고르지 않았을 때만 막는다.
+                .disabled(selectedRows.isEmpty)
                 .sensoryFeedback(.impact(weight: .heavy, intensity: 0.9), trigger: showDetails)
             }
         }

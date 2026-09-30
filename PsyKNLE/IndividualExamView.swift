@@ -5,7 +5,8 @@ struct IndividualExamView: View, Equatable {
     @Environment(\.dismiss) var dismiss
     @State var question: Question
     @State var selectedRows = Set<Q.ID>()
-    @State private var buttonDisabled = false
+    /// 제출할 때마다 늘려 진동·아이콘 효과를 준다.
+    @State private var submitCount = 0
     @Binding var presentInspector: Bool
     var sequenceOfProblem: Int = 0
     @State private var answerBranch: [Q] = []
@@ -18,7 +19,6 @@ struct IndividualExamView: View, Equatable {
             .background(.background.secondary, in: .rect(cornerRadius: 20))
             .onAppear {
                 answerBranch = question.q.sorted()
-                buttonDisabled = question.solved != 0
                 // 예전 버전에서 여러 개를 골라 둔 기록이 있어도 하나만 표시한다.
                 if let first = question.choice.first {
                     selectedRows = [first]
@@ -38,7 +38,6 @@ struct IndividualExamView: View, Equatable {
                     selectedRows = [item.id]
                 }
             }
-            .disabled(buttonDisabled)
             .multilineTextAlignment(.leading)
         }
 
@@ -46,23 +45,20 @@ struct IndividualExamView: View, Equatable {
             Button(action: {
                 let selected = selectedRows.sorted()
                 question.choice = selected
-                if selected.isEmpty {
-                    question.solved = 0
-                } else {
-                    question.solved = selected == question.answer ? 1 : 2
-                    buttonDisabled = true
-                }
+                question.solved = selected == question.answer ? 1 : 2
+                submitCount += 1
             }, label: {
                 Image(systemName: "mail").symbolRenderingMode(.multicolor)
-                HStack { Text("제출") }
+                // 이미 푼 문항도 답을 바꿔 다시 제출할 수 있다.
+                HStack { Text(question.solved == 0 ? "제출" : "다시 제출") }
             })
-            .disabled(buttonDisabled)
+            // 보기를 고르지 않았거나, 이미 제출한 답과 같으면 누를 필요가 없다.
+            .disabled(selectedRows.isEmpty || selectedRows.sorted() == question.choice)
             .sensoryFeedback(.impact(weight: .heavy, intensity: 0.9), trigger: selectedRows)
-            .symbolEffect(.appear, isActive: buttonDisabled)
             .buttonStyle(.borderedProminent)
             .springLoadingBehavior(.enabled)
-            .sensoryFeedback(.impact(weight: .heavy, intensity: 0.9), trigger: buttonDisabled)
-            .symbolEffect(.bounce, value: buttonDisabled)
+            .sensoryFeedback(.impact(weight: .heavy, intensity: 0.9), trigger: submitCount)
+            .symbolEffect(.bounce, value: submitCount)
             .scaleEffect(1.0)
             .scrollIndicators(.hidden)
         }

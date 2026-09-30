@@ -328,19 +328,26 @@ struct ResultView: View {
 }
 
 /// 【같은 주제 기출】에서 연 문항. 아직 풀지 않았으면 문제 화면, 풀었으면 답안 화면을 보여 준다.
+/// 답안 화면에서 [다시 풀기]를 누르면 문제 화면으로 바꿔 답을 다시 고를 수 있다.
 struct LinkedQuestionView: View {
     let question: Question
     @State private var stared: Bool = false
+    @State private var retrying = false
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         NavigationStack {
             Group {
-                if question.choice.isEmpty {
+                if question.choice.isEmpty || retrying {
                     DetailView(question: question, stared: $stared, presentInspector: .constant(false))
                 } else {
                     List { ResultView(question: question, stared: $stared, sequenceOfProblem: 1) }
                         .navigationTitle("답안")
+                        .toolbar {
+                            ToolbarItem(placement: .topBarTrailing) {
+                                Button("다시 풀기") { retrying = true }
+                            }
+                        }
                 }
             }
             .navigationBarTitleDisplayMode(.inline)
