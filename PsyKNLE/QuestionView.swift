@@ -91,6 +91,16 @@ struct QuestionView: View {
         return suggestionSet.sorted().filter { SubjectKeywordSearch.suggestionMatches(tag: $0, searchTerm: searchTerm) }
     }
     
+    /// 지금 걸려 있는 필터 수(별표·메모·연도별·문제별·분류별·주제별). 문항 필터링 버튼에 표시한다.
+    private var activeFilterCount: Int {
+        [isStaredOn,
+         hasMemoFilter,
+         selectedValueForYear != "전체",
+         selectedValueForState != 0,
+         selectedDxOrTx != "전체",
+         selectedTopic != StudyTopics.all].filter { $0 }.count
+    }
+
     /// 답안 화면에서 [이 주제 모아 풀기]를 누르면 그 주제만 남도록 다른 필터를 풀고 문제풀기 모드로 둔다.
     private func applyTopicJump() {
         let topic = pendingTopicJump
@@ -272,13 +282,31 @@ struct QuestionView: View {
                     expanded.toggle()
                 } label: {
                     HStack(spacing: 6) {
-                        Text("문항 필터링(선택\(QuestionView.numberOfSelectedProblems(arrayInUsing:  allQuestions))/총\(String(listProblems.count).trimmingCharacters(in: .whitespaces) ))")
+                        // 필터가 하나라도 걸려 있으면 채운 아이콘과 걸린 개수를 보여 준다.
+                        Image(systemName: activeFilterCount > 0
+                              ? "line.3.horizontal.decrease.circle.fill"
+                              : "line.3.horizontal.decrease.circle")
+                        Text("문항 필터링")
                             .bold()
+                        Text("\(QuestionView.numberOfSelectedProblems(arrayInUsing: allQuestions))/\(listProblems.count)")
+                            .monospacedDigit()
+                        if activeFilterCount > 0 {
+                            Text("\(activeFilterCount)")
+                                .font(.caption.bold())
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 1)
+                                .background(.orange, in: Capsule())
+                                .foregroundStyle(.white)
+                                .accessibilityLabel("필터 \(activeFilterCount)개 적용")
+                        }
                         Image(systemName: expanded ? "chevron.up" : "chevron.down")
                             .imageScale(.small)
                     }
                     .frame(maxWidth: .infinity, alignment: .center)
                 }
+                .buttonStyle(.bordered)
+                .buttonBorderShape(.roundedRectangle(radius: 10))
+                .tint(activeFilterCount > 0 ? .blue : .gray)
                 .popover(isPresented: $expanded, arrowEdge: .top) {
                     VStack(alignment: .leading, spacing: 12) {
                   /*  HStack {
