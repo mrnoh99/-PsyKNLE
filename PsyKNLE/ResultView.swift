@@ -25,6 +25,8 @@ struct ResultView: View {
     @State private var linkedQuestion: Question?
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var dbContext
+    /// 지금 화면에 열려 있는(시트로 겹쳐 연) 문항들. 이 문항들은 다시 열지 않는다.
+    @Environment(\.openQuestionIDs) private var openQuestionIDs
     
     static    func checkStatusOfProblem(question: Question) -> String {
         
@@ -203,6 +205,7 @@ struct ResultView: View {
                 comment2View
                     .sheet(item: $linkedQuestion) { linked in
                         LinkedQuestionView(question: linked)
+                            .environment(\.openQuestionIDs, openIDs)
                     }
             }
             // 같은 주제의 기출을 목록에 모아 이어 풀 수 있게 한다.
@@ -242,11 +245,22 @@ struct ResultView: View {
     }
     
     
+    /// 이 화면의 문항과, 이 화면을 연 앞 화면들의 문항
+    private var openIDs: Set<String> {
+        openQuestionIDs.union([question.id])
+    }
+
     /// comment2를 그린다. 【같은 주제 기출】의 "• 2026-80 …" 줄은 눌러서 그 문항을 열 수 있다.
+    /// 이미 열려 있는 문항은 링크로 만들지 않는다(같은 문항 창이 겹겹이 열리지 않게).
     private var comment2View: some View {
         VStack(alignment: .leading, spacing: 4) {
             ForEach(Array(question.comment2.components(separatedBy: "\n").enumerated()), id: \.offset) { _, line in
-                if let link = ResultView.linkedQuestionLine(line) {
+                if let link = ResultView.linkedQuestionLine(line), openIDs.contains(link.id) {
+                    Text("\(line) (열려 있는 문항)")
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.leading)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                } else if let link = ResultView.linkedQuestionLine(line) {
                     Button {
                         linkedQuestion = fetchQuestion(id: link.id)
                     } label: {
@@ -332,4 +346,9 @@ struct LinkedQuestionView: View {
         .onAppear { stared = question.stared }
         .presentationSizing(.page)
     }
+}
+
+extension EnvironmentValues {
+    /// 시트로 겹쳐 열린 문항 번호들. 【같은 주제 기출】에서 이미 열린 문항을 다시 열지 않는 데 쓴다.
+    @Entry var openQuestionIDs: Set<String> = []
 }
