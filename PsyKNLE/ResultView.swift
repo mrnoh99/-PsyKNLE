@@ -9,6 +9,7 @@
 
 import SwiftUI
 import Observation
+import SwiftData
 
 struct ResultView: View {
     @State   var question: Question //변경 불가
@@ -20,7 +21,10 @@ struct ResultView: View {
     @State private var showPopoverKeyWord: Bool = false
     @AppStorage("pendingTopicJump") private var pendingTopicJump: String = ""
     @State private var shownGuide: TopicGuide?
+    /// 【같은 주제 기출】 목록에서 누른 문항
+    @State private var linkedQuestion: Question?
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var dbContext
     
     static    func checkStatusOfProblem(question: Question) -> String {
         
@@ -196,11 +200,10 @@ struct ResultView: View {
             if question.comment2.trimmingCharacters(in: .whitespaces).isEmpty {
                 
             } else {
-                Text(question.comment2)
-                    .multilineTextAlignment(.leading)
-                    .lineSpacing(10)
-                //       .padding()
-                //  .background(.background.secondary, in : .rect(cornerRadius: 20))//.frame(alignment: .leading)
+                comment2View
+                    .sheet(item: $linkedQuestion) { linked in
+                        LinkedQuestionView(question: linked)
+                    }
             }
             // 같은 주제의 기출을 목록에 모아 이어 풀 수 있게 한다.
             if !question.topic.isEmpty {
@@ -239,6 +242,53 @@ struct ResultView: View {
     }
     
     
+    /// comment2를 그린다. 【같은 주제 기출】의 "• 2026-80 …" 줄은 눌러서 그 문항을 열 수 있다.
+    private var comment2View: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            ForEach(Array(question.comment2.components(separatedBy: "\n").enumerated()), id: \.offset) { _, line in
+                if let link = ResultView.linkedQuestionLine(line) {
+                    Button {
+                        linkedQuestion = fetchQuestion(id: link.id)
+                    } label: {
+                        Text(ResultView.linkLabel(id: link.id, rest: link.rest))
+                            .multilineTextAlignment(.leading)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityHint("\(link.id) 문항 열기")
+                } else {
+                    Text(line)
+                        .multilineTextAlignment(.leading)
+                        .lineSpacing(10)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+            }
+        }
+    }
+
+    /// "• 2026-80 설명" 줄이면 (문항 번호, 설명)을 돌려준다.
+    static func linkedQuestionLine(_ line: String) -> (id: String, rest: String)? {
+        let trimmed = line.trimmingCharacters(in: .whitespaces)
+        guard trimmed.hasPrefix("•") else { return nil }
+        let body = trimmed.dropFirst().trimmingCharacters(in: .whitespaces)
+        let parts = body.split(separator: " ", maxSplits: 1)
+        guard let first = parts.first,
+              first.range(of: #"^\d{4}-\d+$"#, options: .regularExpression) != nil else { return nil }
+        return (String(first), parts.count > 1 ? String(parts[1]) : "")
+    }
+
+    static func linkLabel(id: String, rest: String) -> AttributedString {
+        var number = AttributedString(id)
+        number.foregroundColor = Color.blue
+        number.underlineStyle = Text.LineStyle.single
+        return AttributedString("• ") + number + AttributedString(" " + rest)
+    }
+
+    private func fetchQuestion(id: String) -> Question? {
+        let descriptor = FetchDescriptor<Question>(predicate: #Predicate { $0.id == id })
+        return try? dbContext.fetch(descriptor).first
+    }
+
     static func  messageCorrectOrNot(question: Question) -> String {
         var message = ""
         if question.choice.isEmpty {
@@ -256,4 +306,30 @@ struct ResultView: View {
     QuestionView()
 }
 
+/// 【같은 주제 기출】에서 연 문항. 아직 풀지 않았으면 문제 화면, 풀었으면 답안 화면을 보여 준다.
+struct LinkedQuestionView: View {
+    let question: Question
+    @State private var stared: Bool = false
+    @Environment(\.dismiss) private var dismiss
 
+    var body: some View {
+        NavigationStack {
+            Group {
+                if question.choice.isEmpty {
+                    DetailView(question: question, stared: $stared, presentInspector: .constant(false))
+                } else {
+                    List { ResultView(question: question, stared: $stared, sequenceOfProblem: 1) }
+                        .navigationTitle("답안")
+                }
+            }
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("닫기") { dismiss() }
+                }
+            }
+        }
+        .onAppear { stared = question.stared }
+        .presentationSizing(.page)
+    }
+}
