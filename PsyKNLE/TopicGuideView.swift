@@ -172,10 +172,22 @@ struct TopicGuideView: View {
         }
     }
 
+    /// 한 줄을 글자 모양이 있는 문자열로 바꾼다.
+    /// 굵게(**…**)는 직접 처리한다. 마크다운(CommonMark) 규칙으로는 "**감정(두려움)**에"처럼
+    /// 괄호·따옴표 바로 뒤에 한글이 이어지면 굵게가 닫히지 않고 별표가 그대로 보이기 때문이다.
+    /// 문항 번호 링크만 마크다운으로 해석한다.
     static func inline(_ text: String) -> AttributedString {
         let options = AttributedString.MarkdownParsingOptions(interpretedSyntax: .inlineOnlyPreservingWhitespace)
-        let linked = linkQuestionNumbers(text)
-        return (try? AttributedString(markdown: linked, options: options)) ?? AttributedString(text)
+        var result = AttributedString()
+        for (index, segment) in text.components(separatedBy: "**").enumerated() {
+            let linked = linkQuestionNumbers(segment)
+            var piece = (try? AttributedString(markdown: linked, options: options)) ?? AttributedString(segment)
+            if index % 2 == 1 {
+                piece.inlinePresentationIntent = .stronglyEmphasized
+            }
+            result += piece
+        }
+        return result
     }
 
     /// 정신간호학 문항 번호(연도-71~105)를 마크다운 링크로 바꾼다. 예: 2026-71 → [2026-71](psyknle-question://2026-71)
