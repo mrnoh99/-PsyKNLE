@@ -231,6 +231,7 @@ struct ResultView: View {
                 .padding(.bottom, 4)
                 .sheet(item: $shownGuide) { guide in
                     TopicGuideView(topic: question.topic, guide: guide)
+                        .environment(\.openQuestionIDs, openIDs)
                 }
             }
             if question.memo.trimmingCharacters(in: .whitespaces).isEmpty {
