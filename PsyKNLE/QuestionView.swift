@@ -105,7 +105,7 @@ struct QuestionView: View {
 
     /// 필터 값이 하나라도 바뀌면 달라지는 문자열. onChange 하나로 모든 필터 변경을 잡는 데 쓴다.
     private var filterSignature: String {
-        "\(isStaredOn)|\(hasMemoFilter)|\(selectedValueForYear)|\(selectedValueForState)|\(selectedDxOrTx)|\(selectedTopic)"
+        "\(isStaredOn)|\(hasMemoFilter)|\(selectedValueForYear)|\(selectedValueForState)|\(selectedDxOrTx)|\(selectedTopic)|\(searchTerm)"
     }
 
     private func resetFilters() {
@@ -180,6 +180,9 @@ struct QuestionView: View {
         isStaredOn = false
         hasMemoFilter = false
         searchTerm = ""
+        // 필터 창과 주제별 학습 창이 새 화면 위에 다시 뜨지 않게 닫는다.
+        expanded = false
+        showTopicBrowser = false
         selectedTopic = topic
         examOrResult = true
         // 몇 단계 들어가 있든(문제 → 답안 → 같은 주제 기출 …) 처음 목록 화면으로 돌아간다.
@@ -222,6 +225,8 @@ struct QuestionView: View {
     var body: some View {
         
         let selectedYear = selectedValueForYear == "전체" ? "2" : selectedValueForYear
+        // 검색어 앞뒤 공백만 무시한다. 입력 중에 공백을 지우면 "lewy body"처럼 띄어 쓴 키워드를 칠 수 없다.
+        let trimmedSearch = searchTerm.trimmingCharacters(in: .whitespaces)
         let selectedState = (selectedValueForState  % 3)
         
         
@@ -235,8 +240,8 @@ struct QuestionView: View {
             && (
                 selectedTopic == StudyTopics.all ? true : $0.topic == selectedTopic )
             && (
-                searchTerm == "" ? true :
-                    SubjectKeywordSearch.matches(subject: $0.subject, searchTerm: searchTerm))
+                trimmedSearch.isEmpty ? true :
+                    SubjectKeywordSearch.matches(subject: $0.subject, searchTerm: trimmedSearch))
             && (
                 isStaredOn == false ? true :
                     $0.stared == isStaredOn
@@ -253,7 +258,7 @@ struct QuestionView: View {
         
         let allQuestions  = selectedQuestions
         let problemSet = listProblems.filter{ $0.isOnSet }
-        let suggestions = QuestionView.makeSuggestionSet(listProblems: listProblems, searchTerm: searchTerm)
+        let suggestions = QuestionView.makeSuggestionSet(listProblems: listProblems, searchTerm: trimmedSearch)
         
         /*        Text("의사국시 대비 정신건강의학 풀이집")
          .multilineTextAlignment(.center)
@@ -604,21 +609,19 @@ struct QuestionView: View {
         }
        
         List(allQuestions) { question in
-            
-            NavigationLink(destination:  {
-                if examOrResult { DetailView(question: question, stared: $stared, presentInspector: $presentInspector)
-                } else{
-                    List()  { ResultView(question: question,  stared: $stared, sequenceOfProblem: 1) }
-                    
-                    
-                    /*
-                     AnswerView(question: question, memoText: question.memo, stared: $stared,  selectedRows: question.choice)*/
-                }
-                
-            },
-                           label: {
+            // 값으로 이동한다. 목적지 화면을 행에 묶어 두면, 제출·별표·메모로 문항이 필터(풀지 않음,
+            // 오답, 별표, 메모)에서 빠질 때 행이 사라지면서 열려 있던 화면도 함께 닫혀 버린다.
+            NavigationLink(value: question) {
                 if  let i = allQuestions.firstIndex(of: question)   {   StartListView(question: question, isStaredOn:$isStaredOn, sequenceOfProblem: i+1 )  }
-            })}
+            }
+        }
+        .navigationDestination(for: Question.self) { question in
+            if examOrResult {
+                DetailView(question: question, stared: $stared, presentInspector: $presentInspector)
+            } else {
+                List { ResultView(question: question, stared: $stared, sequenceOfProblem: 1) }
+            }
+        }
         .animation(.default, value:allQuestions )
         .scrollIndicators(.hidden)
         //       .disabled(questionsDisabled)
@@ -653,12 +656,12 @@ struct QuestionView: View {
                     .searchCompletion(suggestion)
             }
         })
-        .onChange(of: searchTerm, initial: false) { old, value in
-            let search = value.trimmingCharacters(in: .whitespaces)
-            searchTerm = search //.lowercased()
-        }
         .onChange(of: pendingTopicJump) { applyTopicJump() }
-        .onAppear { applyTopicJump() }
+        .onAppear {
+            applyTopicJump()
+            // 앱을 켠 직후에도 ▶로 이어 풀 문항이 지금 목록과 같도록 맞춘다.
+            QuestionView.prepareList(listProblems: listProblems, allQuestions: allQuestions)
+        }
 }
 }
 

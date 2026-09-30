@@ -30,6 +30,10 @@ struct IndividualExamView: View, Equatable {
                 Text(item.q)
                 Image(systemName: selectedRows.contains(item.id) ? "checkmark.circle.fill" : "circle")
             }
+            // 글자와 아이콘 사이 빈 곳을 눌러도 선택되게 하고, VoiceOver에서 선택 상태를 읽게 한다.
+            .contentShape(Rectangle())
+            .accessibilityElement(children: .combine)
+            .accessibilityAddTraits(selectedRows.contains(item.id) ? [.isButton, .isSelected] : .isButton)
             .onTapGesture {
                 // 정답은 하나만 고른다. 다른 보기를 누르면 앞의 선택을 바꾸고, 같은 보기를 다시 누르면 해제한다.
                 if selectedRows.contains(item.id) {

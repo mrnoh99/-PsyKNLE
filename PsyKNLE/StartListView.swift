@@ -81,9 +81,13 @@ struct StartListView: View {
             .onTapGesture {
                 question.stared.toggle()
                 if isStaredOn {
-                    question.isOnSet.toggle()
+                    // 별표 필터가 켜져 있으면 ▶ 이어 풀기 대상은 별표 여부와 같다.
+                    question.isOnSet = question.stared
                 }
             }
+            .accessibilityElement()
+            .accessibilityLabel(question.stared ? "별표 해제" : "별표 붙이기")
+            .accessibilityAddTraits(.isButton)
     }
 
     // 문제 문장은 남는 폭을 모두 쓰고 가로·세로 가운데에 맞춘다.

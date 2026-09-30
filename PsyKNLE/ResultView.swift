@@ -332,13 +332,20 @@ struct ResultView: View {
 struct LinkedQuestionView: View {
     let question: Question
     @State private var stared: Bool = false
-    @State private var retrying = false
+    /// 처음 열 때 한 번만 정한다. choice로 바로 고르면, 문제 화면에서 제출하는 순간 choice가 채워져
+    /// 문제 화면이 답안 화면으로 바뀌면서 답안으로 넘어가던 이동이 끊긴다.
+    @State private var retrying: Bool
+
+    init(question: Question) {
+        self.question = question
+        _retrying = State(initialValue: question.choice.isEmpty)
+    }
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         NavigationStack {
             Group {
-                if question.choice.isEmpty || retrying {
+                if retrying {
                     DetailView(question: question, stared: $stared, presentInspector: .constant(false))
                 } else {
                     List { ResultView(question: question, stared: $stared, sequenceOfProblem: 1) }

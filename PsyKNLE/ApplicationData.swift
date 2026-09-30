@@ -84,14 +84,23 @@ class Question: Identifiable, Comparable, Equatable {
         year = seed.year
         intro = seed.intro
         main = seed.main
-        q = seed.q.map { Q(id: $0.id, q: $0.q) }
+        // 보기가 바뀐 경우에만 새로 만든다. 매번 새로 만들면 예전 보기(Q)가 저장소에 계속 쌓인다.
+        let seedOptions = seed.q.map { [$0.id, $0.q] }
+        if q.sorted().map({ [$0.id, $0.q] }) != seed.q.sorted().map({ [$0.id, $0.q] }) {
+            for old in q { modelContext?.delete(old) }
+            q = seedOptions.map { Q(id: $0[0], q: $0[1]) }
+        }
         answer = seed.answer
+        // 정답이 고쳐졌으면 이미 제출한 답을 새 정답으로 다시 채점한다.
+        if !choice.isEmpty {
+            solved = choice.sorted() == answer.sorted() ? 1 : 2
+        }
         subject = Self.mergedSubjects(seed: seed.subject, userAdded: userSubjects)
         classifi = seed.classifi
         topic = seed.topic
         comment1 = seed.comment1
         comment2 = seed.comment2
-        isOnSet = seed.isOnSet
+        // isOnSet(▶ 이어 풀기 대상)은 사용자 화면 상태이므로 덮어쓰지 않는다.
     }
     
     /// 시드에 없는, 사용자가 추가한 키워드만 남긴다.
