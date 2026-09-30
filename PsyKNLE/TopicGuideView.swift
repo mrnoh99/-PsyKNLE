@@ -31,6 +31,8 @@ struct TopicGuideView: View {
                 }
             }
         }
+        // iPad에서는 기본 시트(폼 크기)가 좁아 긴 설명을 읽기 불편하다. 페이지 크기로 연다.
+        .presentationSizing(.page)
     }
 
     @ViewBuilder
