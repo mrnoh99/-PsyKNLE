@@ -101,6 +101,72 @@ struct QuestionView: View {
          selectedTopic != StudyTopics.all].filter { $0 }.count
     }
 
+    /// 필터 값이 하나라도 바뀌면 달라지는 문자열. onChange 하나로 모든 필터 변경을 잡는 데 쓴다.
+    private var filterSignature: String {
+        "\(isStaredOn)|\(hasMemoFilter)|\(selectedValueForYear)|\(selectedValueForState)|\(selectedDxOrTx)|\(selectedTopic)"
+    }
+
+    private func resetFilters() {
+        isStaredOn = false
+        hasMemoFilter = false
+        selectedValueForYear = "전체"
+        selectedValueForState = 0
+        selectedDxOrTx = "전체"
+        selectedTopic = StudyTopics.all
+    }
+
+    /// 걸려 있는 필터를 문항 필터링 버튼 아래에 작은 칩으로 보여 준다. ⓧ를 누르면 그 필터만 해제한다.
+    @ViewBuilder
+    private var activeFilterChips: some View {
+        if activeFilterCount > 0 {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 6) {
+                    if isStaredOn {
+                        filterChip("별표") { isStaredOn = false }
+                    }
+                    if hasMemoFilter {
+                        filterChip("메모") { hasMemoFilter = false }
+                    }
+                    if selectedValueForYear != "전체" {
+                        filterChip("\(selectedValueForYear)년") { selectedValueForYear = "전체" }
+                    }
+                    if selectedValueForState != 0 {
+                        filterChip(listStates[selectedValueForState]) { selectedValueForState = 0 }
+                    }
+                    if selectedDxOrTx != "전체" {
+                        filterChip(selectedDxOrTx) { selectedDxOrTx = "전체" }
+                    }
+                    if selectedTopic != StudyTopics.all {
+                        filterChip(selectedTopic) { selectedTopic = StudyTopics.all }
+                    }
+                    if activeFilterCount > 1 {
+                        Button("모두 해제", action: resetFilters)
+                            .font(.caption)
+                            .buttonStyle(.borderless)
+                    }
+                }
+                .padding(.horizontal)
+            }
+        }
+    }
+
+    private func filterChip(_ title: String, clear: @escaping () -> Void) -> some View {
+        Button(action: clear) {
+            HStack(spacing: 4) {
+                Text(title)
+                    .lineLimit(1)
+                Image(systemName: "xmark.circle.fill")
+                    .foregroundStyle(.secondary)
+            }
+            .font(.caption)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 5)
+            .background(Color.blue.opacity(0.12), in: Capsule())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("\(title) 필터 해제")
+    }
+
     /// 답안 화면에서 [이 주제 모아 풀기]를 누르면 그 주제만 남도록 다른 필터를 풀고 문제풀기 모드로 둔다.
     private func applyTopicJump() {
         let topic = pendingTopicJump
@@ -276,8 +342,8 @@ struct QuestionView: View {
                 
             //    Form {
                 
-                // 문항 필터링: 버튼을 누르면 필터가 버튼 아래로 펼쳐지는 드롭다운(팝오버)으로 나타난다.
-                // iPhone에서도 시트가 아니라 팝오버로 뜨게 한다.
+                // 문항 필터링: 버튼을 누르면 iPad에서는 버튼 아래 드롭다운(팝오버)으로,
+                // iPhone에서는 화면 아래에서 반쯤 올라오는 창(끌어올리면 전체 화면)으로 나타난다.
                 Button {
                     expanded.toggle()
                 } label: {
@@ -309,6 +375,16 @@ struct QuestionView: View {
                 .tint(activeFilterCount > 0 ? .blue : .gray)
                 .popover(isPresented: $expanded, arrowEdge: .top) {
                     VStack(alignment: .leading, spacing: 12) {
+                        HStack {
+                            Text("문항 필터링")
+                                .font(.headline)
+                            Spacer()
+                            if activeFilterCount > 0 {
+                                Button("초기화", action: resetFilters)
+                            }
+                            Button("완료") { expanded = false }
+                                .bold()
+                        }
                   /*  HStack {
                         Text("문항수(선택:\(QuestionView.numberOfSelectedProblems(arrayInUsing: allQuestions))/")  + Text("총:\(String(listProblems.count).trimmingCharacters(in: .whitespaces) ))")
                     }*/
@@ -484,7 +560,9 @@ struct QuestionView: View {
                     }
                     .padding()
                     .frame(minWidth: 340)
-                    .presentationCompactAdaptation(.popover)
+                    // 좁은 화면(iPhone)에서는 팝오버가 시트로 바뀐다. 반쯤 올라오게 하고, 끌어올리면 전체 화면이 된다.
+                    .presentationDetents([.medium, .large])
+                    .presentationDragIndicator(.visible)
                 }
                 
                 // 가장 좁은 iPhone(375pt)에서도 들어가는 폭
@@ -495,8 +573,12 @@ struct QuestionView: View {
                 //   .buttonStyle(.borderedProminent)
                 .springLoadingBehavior(.enabled)
                 .scaleEffect(1.0 )
-               // .buttonStyle(.borderedProminent)
-                //
+                // 필터 창 안팎(칩·초기화)에서 무엇을 바꾸든 ▶로 이어 풀 문항을 다시 맞춘다.
+                .onChange(of: filterSignature) {
+                    QuestionView.prepareList(listProblems: listProblems, allQuestions: allQuestions)
+                }
+
+                activeFilterChips
                   
         }
             
