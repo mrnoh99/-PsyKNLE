@@ -24,6 +24,9 @@ struct QuestionView: View {
     @State private  var  selectedValueForYear: String = "전체"
     @State private var selectedValueForState: Int = 0
     @State private  var  selectedDxOrTx: String = "전체"
+    @State private var selectedTopic: String = StudyTopics.all
+    /// 답안 화면의 [이 주제 모아 풀기]가 주제 이름을 넣으면 목록 화면이 받아 필터를 바꾼다.
+    @AppStorage("pendingTopicJump") private var pendingTopicJump: String = ""
     @State private var isStaredOn: Bool = false
     @State private var hasMemoFilter: Bool = false
     @State private  var  stared: Bool = false
@@ -87,6 +90,36 @@ struct QuestionView: View {
         return suggestionSet.sorted().filter { SubjectKeywordSearch.suggestionMatches(tag: $0, searchTerm: searchTerm) }
     }
     
+    @ViewBuilder
+    private func topicMenuLabel(_ topic: String, count: Int) -> some View {
+        let title = "\(topic) (\(count))"
+        if topic == selectedTopic {
+            Label(title, systemImage: "checkmark")
+        } else {
+            Text(title)
+        }
+    }
+
+    /// 답안 화면에서 [이 주제 모아 풀기]를 누르면 그 주제만 남도록 다른 필터를 풀고 문제풀기 모드로 둔다.
+    private func applyTopicJump() {
+        let topic = pendingTopicJump
+        guard !topic.isEmpty else { return }
+        pendingTopicJump = ""
+        selectedValueForYear = "전체"
+        selectedValueForState = 0
+        selectedDxOrTx = "전체"
+        isStaredOn = false
+        hasMemoFilter = false
+        searchTerm = ""
+        selectedTopic = topic
+        examOrResult = true
+        expanded = true
+        // 필터가 모두 풀렸으므로 ▶로 이어 풀 문항은 곧 이 주제의 문항이다.
+        for question in listProblems {
+            question.isOnSet = question.topic == topic
+        }
+    }
+
     func deviceOrientation() -> String! {
         let device = UIDevice.current
         if device.isGeneratingDeviceOrientationNotifications {
@@ -129,6 +162,8 @@ struct QuestionView: View {
             && (
                 selectedDxOrTx == "전체" ? true : $0.classifi.contains(selectedDxOrTx) )
             && (
+                selectedTopic == StudyTopics.all ? true : $0.topic == selectedTopic )
+            && (
                 searchTerm == "" ? true :
                     SubjectKeywordSearch.matches(subject: $0.subject, searchTerm: searchTerm))
             && (
@@ -148,6 +183,7 @@ struct QuestionView: View {
         let allQuestions  = selectedQuestions
         let problemSet = listProblems.filter{ $0.isOnSet }
         let suggestions = QuestionView.makeSuggestionSet(listProblems: listProblems, searchTerm: searchTerm)
+        let topicCounts = Dictionary(grouping: listProblems, by: \.topic).mapValues(\.count)
         
         /*        Text("의사국시 대비 정신건강의학 풀이집")
          .multilineTextAlignment(.center)
@@ -377,6 +413,41 @@ struct QuestionView: View {
                         
                         
                     }
+
+                    // 주제별: 42개 주제를 9개 단원 하위 메뉴로 나눈다. 다른 필터와 함께 걸린다.
+                    HStack(spacing: 8) {
+                        Text(" 주제별 ")
+                            .padding(3)
+                            .background(selectedTopic == StudyTopics.all ? .gray : .blue)
+                            .foregroundStyle(selectedTopic == StudyTopics.all ? .white : .yellow)
+                            .cornerRadius(3.0)
+                        Menu {
+                            Button {
+                                selectedTopic = StudyTopics.all
+                            } label: {
+                                topicMenuLabel(StudyTopics.all, count: listProblems.count)
+                            }
+                            ForEach(StudyTopics.chapters) { chapter in
+                                Menu(chapter.title) {
+                                    ForEach(chapter.topics, id: \.self) { topic in
+                                        Button {
+                                            selectedTopic = topic
+                                        } label: {
+                                            topicMenuLabel(topic, count: topicCounts[topic] ?? 0)
+                                        }
+                                    }
+                                }
+                            }
+                        } label: {
+                            Text(selectedTopic)
+                                .lineLimit(1)
+                                .truncationMode(.tail)
+                        }
+                        .onChange(of: selectedTopic) {
+                            QuestionView.prepareList(listProblems: listProblems, allQuestions: allQuestions)
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
                   
                     //    } //vstack center
                     
@@ -473,6 +544,8 @@ struct QuestionView: View {
             let search = value.trimmingCharacters(in: .whitespaces)
             searchTerm = search //.lowercased()
         }
+        .onChange(of: pendingTopicJump) { applyTopicJump() }
+        .onAppear { applyTopicJump() }
 }
 }
 

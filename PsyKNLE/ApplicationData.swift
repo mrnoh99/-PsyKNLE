@@ -12,6 +12,8 @@ class Question: Identifiable, Comparable, Equatable {
     var answer: [String] = []
     var subject: [String] = []
     var classifi: String = ""
+    /// 국시 빈출 주제(StudyTopics의 주제 이름). 주제별 필터에 쓴다.
+    var topic: String = ""
     var choice:[String] = []
     var solved: Int = 0
     var memo: String = ""
@@ -21,7 +23,7 @@ class Question: Identifiable, Comparable, Equatable {
     var isOnSet : Bool  = false
     
     
-    init( id: String, year: String, intro: String, main: String, q:[Q] , answer:[String], subject: [String], classifi: String, choice: [String], solved: Int, memo: String, stared: Bool, comment1: String, comment2: String, isOnSet: Bool){
+    init( id: String, year: String, intro: String, main: String, q:[Q] , answer:[String], subject: [String], classifi: String, topic: String = "", choice: [String], solved: Int, memo: String, stared: Bool, comment1: String, comment2: String, isOnSet: Bool){
         self.id = id
         self.year = year
         self.intro = intro
@@ -30,6 +32,7 @@ class Question: Identifiable, Comparable, Equatable {
         self.answer = answer
         self.subject = subject
         self.classifi = classifi
+        self.topic = topic
         self.choice = choice
         self.solved = solved
         self.memo = memo
@@ -85,6 +88,7 @@ class Question: Identifiable, Comparable, Equatable {
         answer = seed.answer
         subject = Self.mergedSubjects(seed: seed.subject, userAdded: userSubjects)
         classifi = seed.classifi
+        topic = seed.topic
         comment1 = seed.comment1
         comment2 = seed.comment2
         isOnSet = seed.isOnSet

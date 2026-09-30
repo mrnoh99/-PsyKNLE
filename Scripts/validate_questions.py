@@ -17,6 +17,7 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parent.parent
 APP_FILE = REPO_ROOT / "PsyKNLE" / "PsyKNLEApp.swift"
 QUESTION_VIEW_FILE = REPO_ROOT / "PsyKNLE" / "QuestionView.swift"
+TOPICS_FILE = REPO_ROOT / "PsyKNLE" / "StudyTopics.swift"
 
 # 간호과정 단계. QuestionView.swift의 listDxOrTx와 같아야 한다.
 VALID_CLASSIFI = {"사정", "진단", "계획", "중재", "평가"}
@@ -25,7 +26,7 @@ YEAR_PATTERN = re.compile(r"^(\d{4})(?:-([1-9]\d*))?$")
 ID_PATTERN = re.compile(r"^(\d{4})-(\d+)$")
 QUESTION_RANGE = range(71, 106)
 
-STRING_FIELDS = ("id", "year", "intro", "main", "classifi")
+STRING_FIELDS = ("id", "year", "intro", "main", "classifi", "topic")
 ARRAY_FIELDS = ("answer", "subject", "choice")
 
 
@@ -260,6 +261,11 @@ def parse_list_classifi(src: str) -> list[str]:
     return re.findall(r'"([^"]*)"', m.group(1))
 
 
+def parse_study_topics(src: str) -> list[str]:
+    """StudyTopics.chapters 안의 주제 이름(단원 제목 제외)."""
+    return re.findall(r'^\s+"([^"]+)",\s*$', src, re.M)
+
+
 def main() -> int:
     errors: list[str] = []
     src = APP_FILE.read_text(encoding="utf-8")
@@ -358,7 +364,22 @@ def main() -> int:
             f"허용 분류 {sorted(VALID_CLASSIFI)}와 다르다"
         )
 
-    print(f"문항 {len(questions)}개 검사")
+    # 주제별 메뉴에 없는 주제는 필터로 고를 수 없고, 문항이 없는 주제는 빈 목록이 된다.
+    study_topics = parse_study_topics(TOPICS_FILE.read_text(encoding="utf-8"))
+    if len(study_topics) != len(set(study_topics)):
+        errors.append(f"{TOPICS_FILE.relative_to(REPO_ROOT)}: 주제 이름이 중복된다")
+    used_topics = {}
+    for entry in questions:
+        topic = entry.get("topic", "")
+        if topic not in study_topics:
+            fail(entry, f'topic이 주제별 메뉴에 없는 값이다: "{topic}"')
+        else:
+            used_topics[topic] = used_topics.get(topic, 0) + 1
+    for topic in study_topics:
+        if topic not in used_topics:
+            errors.append(f"{TOPICS_FILE.relative_to(REPO_ROOT)}: 주제 \"{topic}\"에 해당하는 문항이 없다")
+
+    print(f"문항 {len(questions)}개 검사, 주제 {len(used_topics)}/{len(study_topics)}개 사용")
     for year in sorted(years, reverse=True):
         print(f"  {year}: {years[year]}문항")
 

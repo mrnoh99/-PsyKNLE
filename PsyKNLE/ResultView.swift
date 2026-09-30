@@ -18,6 +18,8 @@ struct ResultView: View {
     
     @State private var showPopoverMemo: Bool = false
     @State private var showPopoverKeyWord: Bool = false
+    @AppStorage("pendingTopicJump") private var pendingTopicJump: String = ""
+    @Environment(\.dismiss) private var dismiss
     
     static    func checkStatusOfProblem(question: Question) -> String {
         
@@ -198,6 +200,18 @@ struct ResultView: View {
                     .lineSpacing(10)
                 //       .padding()
                 //  .background(.background.secondary, in : .rect(cornerRadius: 20))//.frame(alignment: .leading)
+            }
+            // 같은 주제의 기출을 목록에 모아 이어 풀 수 있게 한다.
+            if !question.topic.isEmpty {
+                Button {
+                    pendingTopicJump = question.topic
+                    dismiss()
+                } label: {
+                    Label("이 주제 모아 풀기: \(question.topic)", systemImage: "square.stack.3d.up")
+                        .multilineTextAlignment(.leading)
+                }
+                .buttonStyle(.bordered)
+                .padding(.vertical, 4)
             }
             if question.memo.trimmingCharacters(in: .whitespaces).isEmpty {
                 
