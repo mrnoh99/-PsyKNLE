@@ -32,6 +32,8 @@ struct QuestionView: View {
     @State private var hasMemoFilter: Bool = false
     @State private  var  stared: Bool = false
     @State private var presentInspector: Bool = false
+    /// 바꾸면 NavigationStack을 새로 만들어 쌓인 화면을 모두 닫고 목록(처음 화면)으로 돌아간다.
+    @State private var navigationResetID = UUID()
     @State var examOrResult : Bool  = true
     @State var visibility: NavigationSplitViewVisibility = .all
     @State var expanded : Bool = false
@@ -180,6 +182,9 @@ struct QuestionView: View {
         searchTerm = ""
         selectedTopic = topic
         examOrResult = true
+        // 몇 단계 들어가 있든(문제 → 답안 → 같은 주제 기출 …) 처음 목록 화면으로 돌아간다.
+        presentInspector = false
+        navigationResetID = UUID()
         // 필터가 모두 풀렸으므로 ▶로 이어 풀 문항은 곧 이 주제의 문항이다.
         for question in listProblems {
             question.isOnSet = question.topic == topic
@@ -640,6 +645,7 @@ struct QuestionView: View {
         }
     }
 
+        .id(navigationResetID)
         //  .searchable(text: $searchTerm, prompt: Text("키워드 검색"))
        .searchable(text: $searchTerm, prompt: Text("키워드 검색"), suggestions: {
             ForEach(suggestions, id: \.self) { suggestion in

@@ -23,7 +23,6 @@ struct ResultView: View {
     @State private var shownGuide: TopicGuide?
     /// 【같은 주제 기출】 목록에서 누른 문항
     @State private var linkedQuestion: Question?
-    @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var dbContext
     /// 지금 화면에 열려 있는(시트로 겹쳐 연) 문항들. 이 문항들은 다시 열지 않는다.
     @Environment(\.openQuestionIDs) private var openQuestionIDs
@@ -211,8 +210,9 @@ struct ResultView: View {
             // 같은 주제의 기출을 목록에 모아 이어 풀 수 있게 한다.
             if !question.topic.isEmpty {
                 Button {
+                    // 목록 화면(QuestionView)이 이 값을 받아 쌓인 화면을 모두 닫고 처음으로 돌아간다.
+                    // 여기서 dismiss()하면 한 단계만 뒤로 가므로 부르지 않는다.
                     pendingTopicJump = question.topic
-                    dismiss()
                 } label: {
                     Label("이 주제 모아 풀기: \(question.topic)", systemImage: "square.stack.3d.up")
                         .multilineTextAlignment(.leading)
