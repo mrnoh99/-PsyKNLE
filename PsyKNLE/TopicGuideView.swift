@@ -11,6 +11,8 @@ struct TopicGuideView: View {
     @Environment(\.modelContext) private var dbContext
     /// 이미 열려 있는 문항은 다시 열지 않는다(ResultView와 같은 규칙).
     @Environment(\.openQuestionIDs) private var openQuestionIDs
+    /// 이 창 아래에 이미 열려 있는 주제 설명들
+    @Environment(\.openGuideIDs) private var openGuideIDs
     @ScaledMetric private var indentStep: CGFloat = 16
     @State private var relatedQuestions: [Question] = []
     @State private var linkedQuestion: Question?
@@ -46,6 +48,8 @@ struct TopicGuideView: View {
             .sheet(item: $linkedQuestion) { question in
                 LinkedQuestionView(question: question)
                     .environment(\.openQuestionIDs, openQuestionIDs)
+                    // 여기서 연 문항의 답안에서는 이 설명을 다시 열지 않는다.
+                    .environment(\.openGuideIDs, openGuideIDs.union([guide.id]))
             }
             .navigationTitle(topic)
             .navigationBarTitleDisplayMode(.inline)

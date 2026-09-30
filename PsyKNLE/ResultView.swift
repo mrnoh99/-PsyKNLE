@@ -26,6 +26,8 @@ struct ResultView: View {
     @Environment(\.modelContext) private var dbContext
     /// 지금 화면에 열려 있는(시트로 겹쳐 연) 문항들. 이 문항들은 다시 열지 않는다.
     @Environment(\.openQuestionIDs) private var openQuestionIDs
+    /// 지금 열려 있는 주제 설명 창들. 이 설명들은 다시 열지 않는다.
+    @Environment(\.openGuideIDs) private var openGuideIDs
     
     static    func checkStatusOfProblem(question: Question) -> String {
         
@@ -221,13 +223,17 @@ struct ResultView: View {
                 .padding(.vertical, 4)
             }
             if let guide = TopicGuides.guide(for: question.topic) {
+                // 이 답안이 그 주제 설명 창에서 열린 것이면 같은 설명을 또 열지 않는다.
+                let isGuideOpen = openGuideIDs.contains(guide.id)
                 Button {
                     shownGuide = guide
                 } label: {
-                    Label("주제 설명 보기: \(guide.title)", systemImage: "book")
+                    Label(isGuideOpen ? "주제 설명: \(guide.title) (열려 있음)" : "주제 설명 보기: \(guide.title)",
+                          systemImage: "book")
                         .multilineTextAlignment(.leading)
                 }
                 .buttonStyle(.bordered)
+                .disabled(isGuideOpen)
                 .padding(.bottom, 4)
                 .sheet(item: $shownGuide) { guide in
                     TopicGuideView(topic: question.topic, guide: guide)
@@ -352,4 +358,6 @@ struct LinkedQuestionView: View {
 extension EnvironmentValues {
     /// 시트로 겹쳐 열린 문항 번호들. 【같은 주제 기출】에서 이미 열린 문항을 다시 열지 않는 데 쓴다.
     @Entry var openQuestionIDs: Set<String> = []
+    /// 시트로 겹쳐 열린 주제 설명(TopicGuide.id)들. 같은 설명 창이 겹겹이 열리지 않게 한다.
+    @Entry var openGuideIDs: Set<String> = []
 }
