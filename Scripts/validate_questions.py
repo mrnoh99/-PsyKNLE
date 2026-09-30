@@ -331,6 +331,9 @@ def main() -> int:
         answers = entry.get("answer", [])
         if not answers:
             fail(entry, "answer가 비어 있다")
+        elif len(answers) > 1:
+            # 앱은 보기를 하나만 고르게 한다. 정답이 둘 이상이면 절대 정답 처리가 되지 않는다.
+            fail(entry, f"정답은 하나여야 한다(앱에서 보기를 하나만 고른다): {answers}")
         for a in answers:
             if a not in option_ids:
                 fail(entry, f'answer "{a}"에 해당하는 보기가 없다 (보기 id: {option_ids})')

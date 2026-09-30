@@ -27,6 +27,14 @@ struct DetailView: View {
                 Text("\($0.q)")
             }
             .environment(\.editMode, $showQuestions)
+            // 정답은 하나만 고른다. 새 보기를 고르면 앞의 선택을 해제한다.
+            .onChange(of: selectedRows) { oldValue, newValue in
+                guard newValue.count > 1 else { return }
+                let added = newValue.subtracting(oldValue)
+                if let latest = added.first ?? newValue.first {
+                    selectedRows = [latest]
+                }
+            }
             .multilineTextAlignment(.leading)
             .lineSpacing(10)
             .navigationDestination(isPresented: $showDetails) {
@@ -38,8 +46,9 @@ struct DetailView: View {
             presentInspector = false
             stared = question.stared
             buttonDisabled = question.solved != 0
-            for i in question.choice {
-                selectedRows.insert(i)
+            // 예전 버전에서 여러 개를 골라 둔 기록이 있어도 하나만 표시한다.
+            if let first = question.choice.first {
+                selectedRows = [first]
             }
         }
         .navigationTitle("문제")

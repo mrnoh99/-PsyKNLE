@@ -19,8 +19,9 @@ struct IndividualExamView: View, Equatable {
             .onAppear {
                 answerBranch = question.q.sorted()
                 buttonDisabled = question.solved != 0
-                for id in question.choice {
-                    selectedRows.insert(id)
+                // 예전 버전에서 여러 개를 골라 둔 기록이 있어도 하나만 표시한다.
+                if let first = question.choice.first {
+                    selectedRows = [first]
                 }
             }
 
@@ -30,10 +31,11 @@ struct IndividualExamView: View, Equatable {
                 Image(systemName: selectedRows.contains(item.id) ? "checkmark.circle.fill" : "circle")
             }
             .onTapGesture {
+                // 정답은 하나만 고른다. 다른 보기를 누르면 앞의 선택을 바꾸고, 같은 보기를 다시 누르면 해제한다.
                 if selectedRows.contains(item.id) {
-                    selectedRows.remove(item.id)
+                    selectedRows.removeAll()
                 } else {
-                    selectedRows.insert(item.id)
+                    selectedRows = [item.id]
                 }
             }
             .disabled(buttonDisabled)
