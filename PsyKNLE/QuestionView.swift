@@ -399,28 +399,43 @@ struct QuestionView: View {
                     // 주제별: 다른 필터와 함께 걸린다. 누르면 「주제별 학습」 화면이 열린다.
                     // 주제 이름이 길어 따로 한 줄을 쓴다.
                     HStack(spacing: 8) {
-                        Text(" 주제별 ")
-                            .padding(3)
-                            .background(selectedTopic == StudyTopics.all ? .gray : .blue)
-                            .foregroundStyle(selectedTopic == StudyTopics.all ? .white : .yellow)
-                            .cornerRadius(3.0)
+                        // 다른 필터(네모 배지 + 메뉴)와 달리 주제별은 캡슐 모양의 버튼 하나로 만든다.
+                        // 누르면 「주제별 학습」 화면이 열리고, 고른 주제가 버튼 안에 표시된다.
                         Button {
                             showTopicBrowser = true
                         } label: {
-                            HStack(spacing: 4) {
-                                Text(selectedTopic)
-                                    .lineLimit(1)
-                                    .truncationMode(.tail)
-                                Image(systemName: "square.stack.3d.up")
-                                    .imageScale(.small)
+                            HStack(spacing: 6) {
+                                Image(systemName: "square.stack.3d.up.fill")
+                                Text("주제별")
+                                    .fontWeight(.semibold)
+                                if selectedTopic != StudyTopics.all {
+                                    Text("·")
+                                    Text(selectedTopic)
+                                        .lineLimit(1)
+                                        .truncationMode(.tail)
+                                }
                             }
                         }
+                        .buttonStyle(.borderedProminent)
+                        .buttonBorderShape(.capsule)
+                        .tint(selectedTopic == StudyTopics.all ? .indigo : .orange)
                         .accessibilityLabel("주제별 학습 열기, 현재 \(selectedTopic)")
                         .onChange(of: selectedTopic) {
                             QuestionView.prepareList(listProblems: listProblems, allQuestions: allQuestions)
                         }
                         .sheet(isPresented: $showTopicBrowser) {
                             TopicBrowserView(selectedTopic: $selectedTopic, questions: listProblems)
+                        }
+                        // 주제를 고른 상태에서는 한 번에 해제할 수 있게 한다.
+                        if selectedTopic != StudyTopics.all {
+                            Button {
+                                selectedTopic = StudyTopics.all
+                            } label: {
+                                Image(systemName: "xmark.circle.fill")
+                                    .foregroundStyle(.secondary)
+                            }
+                            .buttonStyle(.borderless)
+                            .accessibilityLabel("주제 선택 해제")
                         }
                     }
                     .font(.callout)
