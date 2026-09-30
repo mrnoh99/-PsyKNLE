@@ -287,7 +287,7 @@ struct QuestionView: View {
                   //  .bold()  //disclosure grup 시작
                     //     isExpanded: $expanded
                     
-                    HStack {
+                    HStack(spacing: 4) {
                         //     Spacer()
                         VStack() {
                             Toggle(isOn: $isStaredOn, label: {
@@ -387,7 +387,7 @@ struct QuestionView: View {
                             
                         }
                         VStack {
-                            Text("  분류별  ")
+                            Text(" 분류별 ")
                                 .padding(3)
                                 .background(selectedDxOrTx == "전체" ? .gray : .blue)
                                 .foregroundStyle(selectedDxOrTx == "전체" ? .white : .yellow)
@@ -402,66 +402,61 @@ struct QuestionView: View {
                                 }
                             
                         }
-                        
-                        
-                        
-                        /*          if UIDevice.current.userInterfaceIdiom == .pad {
-                         Text("한 문제씩 시작하려면  문항을 선택하시오.")
-                         }
-                         */        //  .toolbar {
-                        
-                        
-                        
-                        
-                    }
 
-                    // 주제별: 42개 주제를 9개 단원 하위 메뉴로 나눈다. 다른 필터와 함께 걸린다.
-                    HStack(spacing: 8) {
-                        Text(" 주제별 ")
-                            .padding(3)
-                            .background(selectedTopic == StudyTopics.all ? .gray : .blue)
-                            .foregroundStyle(selectedTopic == StudyTopics.all ? .white : .yellow)
-                            .cornerRadius(3.0)
-                        Menu {
-                            Button {
-                                selectedTopic = StudyTopics.all
-                            } label: {
-                                topicMenuLabel(StudyTopics.all, count: listProblems.count)
-                            }
-                            ForEach(StudyTopics.chapters) { chapter in
-                                Menu(chapter.title) {
-                                    ForEach(chapter.topics, id: \.self) { topic in
-                                        Button {
-                                            selectedTopic = topic
-                                        } label: {
-                                            topicMenuLabel(topic, count: topicCounts[topic] ?? 0)
+                        // 주제별: 42개 주제를 9개 단원 하위 메뉴로 나눈다. 다른 필터와 함께 걸린다.
+                        VStack {
+                            Text(" 주제별 ")
+                                .padding(3)
+                                .background(selectedTopic == StudyTopics.all ? .gray : .blue)
+                                .foregroundStyle(selectedTopic == StudyTopics.all ? .white : .yellow)
+                                .cornerRadius(3.0)
+                            Menu {
+                                // 고른 주제에 설명이 있으면 메뉴 맨 위에서 바로 열 수 있게 한다.
+                                if let guide = TopicGuides.guide(for: selectedTopic) {
+                                    Button {
+                                        shownGuide = guide
+                                    } label: {
+                                        Label("주제 설명 보기", systemImage: "book")
+                                    }
+                                    Divider()
+                                }
+                                Button {
+                                    selectedTopic = StudyTopics.all
+                                } label: {
+                                    topicMenuLabel(StudyTopics.all, count: listProblems.count)
+                                }
+                                ForEach(StudyTopics.chapters) { chapter in
+                                    Menu(chapter.title) {
+                                        ForEach(chapter.topics, id: \.self) { topic in
+                                            Button {
+                                                selectedTopic = topic
+                                            } label: {
+                                                topicMenuLabel(topic, count: topicCounts[topic] ?? 0)
+                                            }
                                         }
                                     }
                                 }
-                            }
-                        } label: {
-                            Text(selectedTopic)
-                                .lineLimit(1)
-                                .truncationMode(.tail)
-                        }
-                        .onChange(of: selectedTopic) {
-                            QuestionView.prepareList(listProblems: listProblems, allQuestions: allQuestions)
-                        }
-                        // 고른 주제에 설명이 있으면 바로 열어 볼 수 있게 한다.
-                        if let guide = TopicGuides.guide(for: selectedTopic) {
-                            Button {
-                                shownGuide = guide
                             } label: {
-                                Label("주제 설명", systemImage: "book")
-                                    .labelStyle(.iconOnly)
+                                // 긴 주제 이름은 한 줄 안에서 줄여 보여 준다. 전체 이름은 메뉴에서 확인한다.
+                                HStack(spacing: 2) {
+                                    Text(selectedTopic)
+                                        .lineLimit(1)
+                                        .truncationMode(.tail)
+                                    Image(systemName: "chevron.up.chevron.down")
+                                        .imageScale(.small)
+                                }
                             }
-                            .accessibilityLabel("주제 설명 보기")
+                            .frame(maxWidth: 76)
+                            .onChange(of: selectedTopic) {
+                                QuestionView.prepareList(listProblems: listProblems, allQuestions: allQuestions)
+                            }
                             .sheet(item: $shownGuide) { guide in
                                 TopicGuideView(topic: selectedTopic, guide: guide)
                             }
                         }
                     }
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                    // 연도별·문제별·분류별·주제별을 한 줄에 놓기 위해 제목 글씨를 조금 줄이고 간격을 좁힌다.
+                    .font(.callout)
                   
                     //    } //vstack center
                     
@@ -477,7 +472,8 @@ struct QuestionView: View {
                       
             }
                 
-                .frame( width: 330, alignment: .center)
+                // 연도별·문제별·분류별·주제별이 한 줄에 들어가도록 폭을 넓혔다(가장 좁은 iPhone 375pt 기준).
+                .frame( width: 356, alignment: .center)
                 .frame(alignment: .top)
                 .sensoryFeedback(
                     .impact(weight: .heavy, intensity: 0.9), trigger: expanded )
