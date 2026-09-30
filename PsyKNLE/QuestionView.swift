@@ -104,7 +104,6 @@ struct QuestionView: View {
         searchTerm = ""
         selectedTopic = topic
         examOrResult = true
-        expanded = true
         // 필터가 모두 풀렸으므로 ▶로 이어 풀 문항은 곧 이 주제의 문항이다.
         for question in listProblems {
             question.isOnSet = question.topic == topic
@@ -267,8 +266,21 @@ struct QuestionView: View {
                 
             //    Form {
                 
-                DisclosureGroup(isExpanded: $expanded  )
-                    {
+                // 문항 필터링: 버튼을 누르면 필터가 버튼 아래로 펼쳐지는 드롭다운(팝오버)으로 나타난다.
+                // iPhone에서도 시트가 아니라 팝오버로 뜨게 한다.
+                Button {
+                    expanded.toggle()
+                } label: {
+                    HStack(spacing: 6) {
+                        Text("문항 필터링(선택\(QuestionView.numberOfSelectedProblems(arrayInUsing:  allQuestions))/총\(String(listProblems.count).trimmingCharacters(in: .whitespaces) ))")
+                            .bold()
+                        Image(systemName: expanded ? "chevron.up" : "chevron.down")
+                            .imageScale(.small)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .center)
+                }
+                .popover(isPresented: $expanded, arrowEdge: .top) {
+                    VStack(alignment: .leading, spacing: 12) {
                   /*  HStack {
                         Text("문항수(선택:\(QuestionView.numberOfSelectedProblems(arrayInUsing: allQuestions))/")  + Text("총:\(String(listProblems.count).trimmingCharacters(in: .whitespaces) ))")
                     }*/
@@ -441,21 +453,13 @@ struct QuestionView: View {
                     .font(.callout)
                     .frame(maxWidth: .infinity, alignment: .leading)
                   
-                    //    } //vstack center
-                    
-                    
-                    
+                    }
+                    .padding()
+                    .frame(minWidth: 340)
+                    .presentationCompactAdaptation(.popover)
                 }
-              label: {
-                    
-               //  Text("문항 필터링")
-                  Text("문항 필터링(선택\(QuestionView.numberOfSelectedProblems(arrayInUsing:  allQuestions))/총\(String(listProblems.count).trimmingCharacters(in: .whitespaces) ))")
-                      .bold()
-                      .frame( width: 280, alignment: .center)
-                      
-            }
                 
-                // 필터 줄이 가장 좁은 iPhone(375pt)에서도 들어가는 폭
+                // 가장 좁은 iPhone(375pt)에서도 들어가는 폭
                 .frame( width: 356, alignment: .center)
                 .frame(alignment: .top)
                 .sensoryFeedback(
