@@ -392,38 +392,39 @@ struct QuestionView: View {
                             
                         }
 
-                        // 주제별: 다른 필터와 함께 걸린다.
-                        VStack {
-                            Text(" 주제별 ")
-                                .padding(3)
-                                .background(selectedTopic == StudyTopics.all ? .gray : .blue)
-                                .foregroundStyle(selectedTopic == StudyTopics.all ? .white : .yellow)
-                                .cornerRadius(3.0)
-                            // 주제별은 42개 주제를 단원별로 한눈에 보고 풀이 현황과 설명까지 보는 별도 화면에서 고른다.
-                            Button {
-                                showTopicBrowser = true
-                            } label: {
-                                // 긴 주제 이름은 한 줄 안에서 줄여 보여 준다.
-                                HStack(spacing: 2) {
-                                    Text(selectedTopic)
-                                        .lineLimit(1)
-                                        .truncationMode(.tail)
-                                    Image(systemName: "square.stack.3d.up")
-                                        .imageScale(.small)
-                                }
-                            }
-                            .frame(maxWidth: 76)
-                            .accessibilityLabel("주제별 학습 열기, 현재 \(selectedTopic)")
-                            .onChange(of: selectedTopic) {
-                                QuestionView.prepareList(listProblems: listProblems, allQuestions: allQuestions)
-                            }
-                            .sheet(isPresented: $showTopicBrowser) {
-                                TopicBrowserView(selectedTopic: $selectedTopic, questions: listProblems)
+                    }
+                    // 연도별·문제별·분류별을 한 줄에 놓기 위해 제목 글씨를 조금 줄이고 간격을 좁힌다.
+                    .font(.callout)
+
+                    // 주제별: 다른 필터와 함께 걸린다. 누르면 「주제별 학습」 화면이 열린다.
+                    // 주제 이름이 길어 따로 한 줄을 쓴다.
+                    HStack(spacing: 8) {
+                        Text(" 주제별 ")
+                            .padding(3)
+                            .background(selectedTopic == StudyTopics.all ? .gray : .blue)
+                            .foregroundStyle(selectedTopic == StudyTopics.all ? .white : .yellow)
+                            .cornerRadius(3.0)
+                        Button {
+                            showTopicBrowser = true
+                        } label: {
+                            HStack(spacing: 4) {
+                                Text(selectedTopic)
+                                    .lineLimit(1)
+                                    .truncationMode(.tail)
+                                Image(systemName: "square.stack.3d.up")
+                                    .imageScale(.small)
                             }
                         }
+                        .accessibilityLabel("주제별 학습 열기, 현재 \(selectedTopic)")
+                        .onChange(of: selectedTopic) {
+                            QuestionView.prepareList(listProblems: listProblems, allQuestions: allQuestions)
+                        }
+                        .sheet(isPresented: $showTopicBrowser) {
+                            TopicBrowserView(selectedTopic: $selectedTopic, questions: listProblems)
+                        }
                     }
-                    // 연도별·문제별·분류별·주제별을 한 줄에 놓기 위해 제목 글씨를 조금 줄이고 간격을 좁힌다.
                     .font(.callout)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                   
                     //    } //vstack center
                     
@@ -439,7 +440,7 @@ struct QuestionView: View {
                       
             }
                 
-                // 연도별·문제별·분류별·주제별이 한 줄에 들어가도록 폭을 넓혔다(가장 좁은 iPhone 375pt 기준).
+                // 필터 줄이 가장 좁은 iPhone(375pt)에서도 들어가는 폭
                 .frame( width: 356, alignment: .center)
                 .frame(alignment: .top)
                 .sensoryFeedback(
