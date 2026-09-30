@@ -34,19 +34,49 @@ struct TopicBrowserView: View {
         return result
     }
 
-    /// 검색어가 단원 제목이나 주제 이름에 들어 있는 주제만 남긴다.
-    private var visibleChapters: [StudyTopics.Chapter] {
-        let term = searchText.trimmingCharacters(in: .whitespaces)
+    private var searchTerm: String {
+        searchText.trimmingCharacters(in: .whitespaces)
+    }
+
+    /// 검색어와 맞는 키워드(동의어 포함)가 붙은 문항 수를 주제별로 센다.
+    private var keywordHits: [String: Int] {
+        let term = searchTerm
+        guard !term.isEmpty else { return [:] }
+        var result: [String: Int] = [:]
+        for question in questions where SubjectKeywordSearch.matches(subject: question.subject, searchTerm: term) {
+            result[question.topic, default: 0] += 1
+        }
+        return result
+    }
+
+    /// 검색어가 단원 제목·주제 이름에 들어 있거나, 그 키워드가 붙은 문항이 있는 주제만 남긴다.
+    private func visibleChapters(keywordHits: [String: Int]) -> [StudyTopics.Chapter] {
+        let term = searchTerm
         guard !term.isEmpty else { return StudyTopics.chapters }
         return StudyTopics.chapters.compactMap { chapter in
             if chapter.title.localizedStandardContains(term) { return chapter }
-            let topics = chapter.topics.filter { $0.localizedStandardContains(term) }
+            let topics = chapter.topics.filter { $0.localizedStandardContains(term) || keywordHits[$0, default: 0] > 0 }
             return topics.isEmpty ? nil : StudyTopics.Chapter(title: chapter.title, topics: topics)
         }
     }
 
+    /// 검색창 아래 제안: 맞는 주제 이름과 문항 키워드. 고르면 검색어로 들어간다.
+    private var searchSuggestions: [String] {
+        let term = searchTerm
+        guard !term.isEmpty else { return [] }
+        let topics = StudyTopics.chapters.flatMap(\.topics).filter { $0.localizedStandardContains(term) }
+        var keywords = Set<String>()
+        for question in questions {
+            for tag in question.subject where SubjectKeywordSearch.suggestionMatches(tag: tag, searchTerm: term) {
+                keywords.insert(tag)
+            }
+        }
+        return topics + keywords.subtracting(topics).sorted().prefix(10)
+    }
+
     var body: some View {
         let stats = statsByTopic
+        let hits = keywordHits
         NavigationStack {
             List {
                 if searchText.isEmpty {
@@ -56,10 +86,15 @@ struct TopicBrowserView: View {
                         Text("주제를 누르면 그 주제의 문항만 목록에 남는다. 연도·문제·분류 필터와 함께 걸린다. 책 모양 버튼은 주제 설명이다.")
                     }
                 }
-                ForEach(visibleChapters) { chapter in
+                if !searchTerm.isEmpty && visibleChapters(keywordHits: hits).isEmpty {
+                    Text("'\(searchTerm)'와 맞는 주제나 키워드가 없다.")
+                        .foregroundStyle(.secondary)
+                }
+                ForEach(visibleChapters(keywordHits: hits)) { chapter in
                     Section {
                         ForEach(chapter.topics, id: \.self) { topic in
-                            topicRow(topic, stats: stats[topic] ?? Stats())
+                            topicRow(topic, stats: stats[topic] ?? Stats(),
+                                     keywordHitCount: topic.localizedStandardContains(searchTerm) ? 0 : hits[topic, default: 0])
                         }
                     } header: {
                         HStack {
@@ -70,7 +105,13 @@ struct TopicBrowserView: View {
                     }
                 }
             }
-            .searchable(text: $searchText, prompt: "주제 검색")
+            // 주제 이름과 문항 키워드(동의어 포함)를 함께 찾는다. 제안 목록도 이 화면의 것만 보여 준다.
+            .searchable(text: $searchText, prompt: "주제·키워드 검색") {
+                ForEach(searchSuggestions, id: \.self) { suggestion in
+                    Text(suggestion)
+                        .searchCompletion(suggestion)
+                }
+            }
             .navigationTitle("주제별 학습")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -110,7 +151,7 @@ struct TopicBrowserView: View {
         .buttonStyle(.plain)
     }
 
-    private func topicRow(_ topic: String, stats: Stats) -> some View {
+    private func topicRow(_ topic: String, stats: Stats, keywordHitCount: Int = 0) -> some View {
         let isSelected = topic == selectedTopic
         return HStack(spacing: 12) {
             Button {
@@ -130,6 +171,12 @@ struct TopicBrowserView: View {
                     Text("\(stats.total)문항 · 정답 \(stats.correct) · 오답 \(stats.wrong) · 풀지 않음 \(stats.unsolved)")
                         .font(.caption)
                         .foregroundStyle(.secondary)
+                    // 주제 이름이 아니라 키워드로 찾은 주제이면 몇 문항에 그 키워드가 붙었는지 알려 준다.
+                    if keywordHitCount > 0 {
+                        Label("'\(searchTerm)' 키워드 문항 \(keywordHitCount)개", systemImage: "tag")
+                            .font(.caption)
+                            .foregroundStyle(.orange)
+                    }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .contentShape(Rectangle())
