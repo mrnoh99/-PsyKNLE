@@ -5,11 +5,38 @@ struct InspectorView: View {
 
     @Binding var presentInspector: Bool
     @State private var showCreditView = false
+    /// ⓘ 창의 탭. 마지막에 본 탭을 기억한다.
+    @AppStorage("inspectorTab") private var tab: InspectorTab = .guide
+
+    enum InspectorTab: String, CaseIterable, Identifiable {
+        case guide = "사용설명"
+        case analysis = "학습분석"
+        var id: String { rawValue }
+    }
 
     var body: some View {
         VStack(spacing: 0) {
             headerView
 
+            Picker("보기", selection: $tab) {
+                ForEach(InspectorTab.allCases) { tab in
+                    Text(tab.rawValue).tag(tab)
+                }
+            }
+            .pickerStyle(.segmented)
+            .padding(.horizontal)
+            .padding(.bottom, 8)
+
+            switch tab {
+            case .guide:
+                guideTab
+            case .analysis:
+                LearningAnalysisView(presentInspector: $presentInspector)
+            }
+        }
+    }
+
+    private var guideTab: some View {
             VStack(spacing: 16) {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 12) {
@@ -38,7 +65,6 @@ struct InspectorView: View {
             }
             .padding(.horizontal)
             .padding(.bottom)
-        }
     }
 }
 
@@ -48,7 +74,7 @@ private extension InspectorView {
         HStack {
             Spacer()
 
-            Text("사용설명")
+            Text(tab.rawValue)
                 .font(.headline)
                 .bold()
                 .padding()
